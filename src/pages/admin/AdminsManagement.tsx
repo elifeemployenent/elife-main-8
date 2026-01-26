@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Plus, ArrowLeft, AlertCircle } from "lucide-react";
@@ -267,109 +268,99 @@ export default function AdminsManagement() {
                 Add Admin
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[85vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Create New Admin</DialogTitle>
                 <DialogDescription>
                   Add a new administrator for a division
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleCreateAdmin} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+              <ScrollArea className="flex-1 pr-4">
+                <form onSubmit={handleCreateAdmin} className="space-y-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    value={newFullName}
-                    onChange={(e) => setNewFullName(e.target.value)}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      value={newFullName}
+                      onChange={(e) => setNewFullName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (for login)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    placeholder="+91 9876543210"
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number (for login)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="+91 9876543210"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="admin@example.com"
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      minLength={6}
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    minLength={6}
-                    required
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="division">Division</Label>
+                    <Select
+                      value={selectedDivision}
+                      onValueChange={setSelectedDivision}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a division" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {divisions.map((division) => (
+                          <SelectItem key={division.id} value={division.id}>
+                            {division.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="division">Division</Label>
-                  <Select
-                    value={selectedDivision}
-                    onValueChange={setSelectedDivision}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a division" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {divisions.map((division) => (
-                        <SelectItem key={division.id} value={division.id}>
-                          {division.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Admin"
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
+                  <DialogFooter className="pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        "Create Admin"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
         </div>
