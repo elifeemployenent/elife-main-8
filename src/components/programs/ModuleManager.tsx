@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -7,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, FileText, Video, Globe } from "lucide-react";
 import { ProgramModule } from "@/hooks/usePrograms";
-
 interface ModuleManagerProps {
   programId: string;
   modules: ProgramModule[];
@@ -38,8 +38,26 @@ const MODULE_TYPES = [
 export function ModuleManager({ programId, modules, onModulesChange }: ModuleManagerProps) {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { toast } = useToast();
+  const { adminToken } = useAuth();
 
   const getModule = (type: string) => modules.find((m) => m.module_type === type);
+
+  const callAdminModulesApi = async (action: string, data: Record<string, unknown>) => {
+    const response = await supabase.functions.invoke("admin-modules", {
+      body: { action, data },
+      headers: adminToken ? { "x-admin-token": adminToken } : {},
+    });
+
+    if (response.error) {
+      throw new Error(response.error.message || "API call failed");
+    }
+
+    if (response.data?.error) {
+      throw new Error(response.data.error);
+    }
+
+    return response.data;
+  };
 
   const handleModuleToggle = async (type: string) => {
     setIsUpdating(type);
@@ -48,12 +66,7 @@ export function ModuleManager({ programId, modules, onModulesChange }: ModuleMan
     try {
       if (existingModule) {
         // Delete module
-        const { error } = await supabase
-          .from("program_modules")
-          .delete()
-          .eq("id", existingModule.id);
-
-        if (error) throw error;
+        await callAdminModulesApi("delete", { id: existingModule.id });
 
         toast({
           title: "Module disabled",
@@ -61,13 +74,11 @@ export function ModuleManager({ programId, modules, onModulesChange }: ModuleMan
         });
       } else {
         // Create module
-        const { error } = await supabase.from("program_modules").insert({
+        await callAdminModulesApi("create", {
           program_id: programId,
           module_type: type,
           is_published: false,
         });
-
-        if (error) throw error;
 
         toast({
           title: "Module enabled",
@@ -76,10 +87,11 @@ export function ModuleManager({ programId, modules, onModulesChange }: ModuleMan
       }
 
       onModulesChange();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update module";
       toast({
         title: "Error",
-        description: err.message || "Failed to update module",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -91,12 +103,10 @@ export function ModuleManager({ programId, modules, onModulesChange }: ModuleMan
     setIsUpdating(moduleId);
 
     try {
-      const { error } = await supabase
-        .from("program_modules")
-        .update({ is_published: !currentStatus })
-        .eq("id", moduleId);
-
-      if (error) throw error;
+      await callAdminModulesApi("update", {
+        id: moduleId,
+        is_published: !currentStatus,
+      });
 
       toast({
         title: !currentStatus ? "Module published" : "Module unpublished",
@@ -106,10 +116,11 @@ export function ModuleManager({ programId, modules, onModulesChange }: ModuleMan
       });
 
       onModulesChange();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update publish status";
       toast({
         title: "Error",
-        description: err.message || "Failed to update publish status",
+        description: message,
         variant: "destructive",
       });
     } finally {
