@@ -152,24 +152,32 @@ export function FixedRegistrationFields({
           Panchayath
           <span className="text-destructive ml-1">*</span>
         </Label>
-        <Select
-          value={values.panchayath_id}
-          onValueChange={handlePanchayathChange}
-          disabled={isLoadingPanchayaths}
-        >
-          <SelectTrigger className={errors?.panchayath_id ? "border-destructive" : ""}>
-            <SelectValue
-              placeholder={isLoadingPanchayaths ? "Loading..." : "Select panchayath"}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {panchayaths.map((panchayath) => (
-              <SelectItem key={panchayath.id} value={panchayath.id}>
-                {panchayath.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isLoadingPanchayaths ? (
+          <Input disabled placeholder="Loading panchayaths..." />
+        ) : panchayaths.length === 0 ? (
+          <div>
+            <Input disabled placeholder="No panchayaths available" />
+            <p className="text-sm text-muted-foreground mt-1">
+              Please contact admin to add panchayaths
+            </p>
+          </div>
+        ) : (
+          <Select
+            value={values.panchayath_id}
+            onValueChange={handlePanchayathChange}
+          >
+            <SelectTrigger className={errors?.panchayath_id ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select panchayath" />
+            </SelectTrigger>
+            <SelectContent position="popper" className="max-h-60">
+              {panchayaths.map((panchayath) => (
+                <SelectItem key={panchayath.id} value={panchayath.id}>
+                  {panchayath.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {errors?.panchayath_id && (
           <p className="text-sm text-destructive">{errors.panchayath_id}</p>
         )}
