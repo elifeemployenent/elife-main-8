@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
-import { 
-  Leaf, 
-  Apple, 
-  UtensilsCrossed, 
-  Briefcase, 
-  Baby, 
-  HeartHandshake, 
-  ShoppingBag,
-  ArrowRight 
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+// Import division logos
+import farmelifeLogo from "@/assets/divisions/farmelife.png";
+import organelifeLogo from "@/assets/divisions/organelife.png";
+import foodelifeLogo from "@/assets/divisions/foodelife.png";
+import entrelifeLogo from "@/assets/divisions/entrelife.png";
+import embryoLogo from "@/assets/divisions/embryo.png";
+import avalLogo from "@/assets/divisions/aval.jpg";
+import pennyekartLogo from "@/assets/divisions/pennyekart.png";
 
 const divisions = [
   {
@@ -18,7 +18,7 @@ const divisions = [
     name: "Farmelife",
     nameMl: "ഫാർമെലൈഫ്",
     description: "Agricultural initiatives and farming support for women",
-    icon: Leaf,
+    logo: farmelifeLogo,
     color: "bg-division-farmelife",
   },
   {
@@ -26,7 +26,7 @@ const divisions = [
     name: "Organelife",
     nameMl: "ഓർഗനെലൈഫ്",
     description: "Organic farming and sustainable agriculture programs",
-    icon: Apple,
+    logo: organelifeLogo,
     color: "bg-division-organelife",
   },
   {
@@ -34,7 +34,7 @@ const divisions = [
     name: "Foodelife",
     nameMl: "ഫുഡെലൈഫ്",
     description: "Food processing and culinary entrepreneurship",
-    icon: UtensilsCrossed,
+    logo: foodelifeLogo,
     color: "bg-division-foodelife",
   },
   {
@@ -42,7 +42,7 @@ const divisions = [
     name: "Entrelife",
     nameMl: "എന്ററലൈഫ്",
     description: "Entrepreneurship development and business support",
-    icon: Briefcase,
+    logo: entrelifeLogo,
     color: "bg-division-entrelife",
   },
   {
@@ -50,7 +50,7 @@ const divisions = [
     name: "Embryo",
     nameMl: "എംബ്രിയോ",
     description: "Child care and early development programs",
-    icon: Baby,
+    logo: embryoLogo,
     color: "bg-division-embryo",
   },
   {
@@ -58,7 +58,7 @@ const divisions = [
     name: "Aval",
     nameMl: "അവൾ",
     description: "Welfare support wing for women in need",
-    icon: HeartHandshake,
+    logo: avalLogo,
     color: "bg-division-aval",
   },
   {
@@ -66,7 +66,7 @@ const divisions = [
     name: "Pennyekart",
     nameMl: "പെന്നിക്കാർട്ട്",
     description: "E-commerce platform for women entrepreneurs",
-    icon: ShoppingBag,
+    logo: pennyekartLogo,
     color: "bg-division-pennyekart",
   },
 ];
@@ -95,11 +95,15 @@ export function DivisionsSection() {
               className="block"
             >
               <Card 
-                className="group h-full hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/50 overflow-hidden cursor-pointer hover:-translate-y-1"
+                className="group h-full hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/50 overflow-hidden cursor-pointer hover:-translate-y-1 bg-card"
               >
-                <CardContent className="p-6">
-                  <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${division.color} text-white mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                    <division.icon className="h-7 w-7" />
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="h-24 w-24 mb-4 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <img 
+                      src={division.logo} 
+                      alt={`${division.name} logo`}
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </div>
                   <h3 className="font-display font-semibold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
                     {division.name}

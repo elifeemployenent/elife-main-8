@@ -1,14 +1,14 @@
 import { Layout } from "@/components/layout/Layout";
-import { 
-  Leaf, 
-  Apple, 
-  UtensilsCrossed, 
-  Briefcase, 
-  Baby, 
-  HeartHandshake, 
-  ShoppingBag 
-} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Import division logos
+import farmelifeLogo from "@/assets/divisions/farmelife.png";
+import organelifeLogo from "@/assets/divisions/organelife.png";
+import foodelifeLogo from "@/assets/divisions/foodelife.png";
+import entrelifeLogo from "@/assets/divisions/entrelife.png";
+import embryoLogo from "@/assets/divisions/embryo.png";
+import avalLogo from "@/assets/divisions/aval.jpg";
+import pennyekartLogo from "@/assets/divisions/pennyekart.png";
 
 const divisions = [
   {
@@ -23,8 +23,7 @@ const divisions = [
       "Market linkage support",
       "Organic farming guidance"
     ],
-    icon: Leaf,
-    color: "bg-division-farmelife",
+    logo: farmelifeLogo,
     bgGradient: "from-division-farmelife/10 to-transparent",
   },
   {
@@ -39,8 +38,7 @@ const divisions = [
       "Natural pest management",
       "Organic product marketing"
     ],
-    icon: Apple,
-    color: "bg-division-organelife",
+    logo: organelifeLogo,
     bgGradient: "from-division-organelife/10 to-transparent",
   },
   {
@@ -55,8 +53,7 @@ const divisions = [
       "Packaging & branding help",
       "Catering business setup"
     ],
-    icon: UtensilsCrossed,
-    color: "bg-division-foodelife",
+    logo: foodelifeLogo,
     bgGradient: "from-division-foodelife/10 to-transparent",
   },
   {
@@ -71,8 +68,7 @@ const divisions = [
       "Marketing & sales support",
       "Networking opportunities"
     ],
-    icon: Briefcase,
-    color: "bg-division-entrelife",
+    logo: entrelifeLogo,
     bgGradient: "from-division-entrelife/10 to-transparent",
   },
   {
@@ -87,8 +83,7 @@ const divisions = [
       "Daycare setup support",
       "Child nutrition programs"
     ],
-    icon: Baby,
-    color: "bg-division-embryo",
+    logo: embryoLogo,
     bgGradient: "from-division-embryo/10 to-transparent",
   },
   {
@@ -103,8 +98,7 @@ const divisions = [
       "Emergency assistance",
       "Rehabilitation support"
     ],
-    icon: HeartHandshake,
-    color: "bg-division-aval",
+    logo: avalLogo,
     bgGradient: "from-division-aval/10 to-transparent",
   },
   {
@@ -119,8 +113,7 @@ const divisions = [
       "Digital marketing",
       "Order management"
     ],
-    icon: ShoppingBag,
-    color: "bg-division-pennyekart",
+    logo: pennyekartLogo,
     bgGradient: "from-division-pennyekart/10 to-transparent",
     infoOnly: true,
   },
@@ -157,8 +150,12 @@ const Divisions = () => {
               >
                 <div className="grid md:grid-cols-3 gap-6">
                   <CardHeader className="md:col-span-1 flex flex-col justify-center items-center text-center p-8 bg-gradient-to-br from-background to-transparent">
-                    <div className={`h-20 w-20 rounded-2xl ${division.color} text-white flex items-center justify-center mb-4`}>
-                      <division.icon className="h-10 w-10" />
+                    <div className="h-28 w-28 mb-4 flex items-center justify-center">
+                      <img 
+                        src={division.logo} 
+                        alt={`${division.name} logo`}
+                        className="max-h-full max-w-full object-contain"
+                      />
                     </div>
                     <CardTitle className="font-display text-2xl">{division.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{division.nameMl}</p>
@@ -177,7 +174,7 @@ const Divisions = () => {
                     <div className="grid sm:grid-cols-2 gap-3">
                       {division.features.map((feature, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
-                          <div className={`h-2 w-2 rounded-full ${division.color}`} />
+                          <div className="h-2 w-2 rounded-full bg-primary" />
                           <span className="text-foreground">{feature}</span>
                         </div>
                       ))}
