@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Divisions from "./pages/Divisions";
+import DivisionDetail from "./pages/DivisionDetail";
 import Programs from "./pages/Programs";
 import ProgramPublic from "./pages/ProgramPublic";
 import Contact from "./pages/Contact";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/divisions" element={<Divisions />} />
+            <Route path="/division/:slug" element={<DivisionDetail />} />
             <Route path="/programs" element={<Programs />} />
             <Route path="/program/:id" element={<ProgramPublic />} />
             <Route path="/contact" element={<Contact />} />

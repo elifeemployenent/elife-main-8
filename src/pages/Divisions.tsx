@@ -1,5 +1,8 @@
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 // Import division logos
 import farmelifeLogo from "@/assets/divisions/farmelife.png";
@@ -171,7 +174,7 @@ const Divisions = () => {
                     <p className="text-muted-foreground mb-6 leading-relaxed">
                       {division.description}
                     </p>
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-2 gap-3 mb-6">
                       {division.features.map((feature, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <div className="h-2 w-2 rounded-full bg-primary" />
@@ -179,6 +182,12 @@ const Divisions = () => {
                         </div>
                       ))}
                     </div>
+                    <Button asChild variant="outline">
+                      <Link to={`/division/${division.id}`}>
+                        View Programs & Announcements
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
                   </CardContent>
                 </div>
               </Card>
