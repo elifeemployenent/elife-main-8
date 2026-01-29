@@ -91,7 +91,7 @@ export function DivisionsSection() {
           {divisions.map((division) => (
             <Link 
               key={division.id}
-              to={`/programs?division=${division.id}`}
+              to={`/divisions/${division.id}`}
               className="block"
             >
               <Card 
@@ -113,7 +113,7 @@ export function DivisionsSection() {
                     {division.description}
                   </p>
                   <div className="flex items-center gap-1 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>View Programs</span>
+                    <span>Explore Division</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 </CardContent>
