@@ -129,10 +129,10 @@ export default function SuperAdminDashboard() {
             </Link>
           </Button>
           <Button asChild variant="outline" className="h-auto py-3 sm:py-4">
-            <Link to="/admin/admins" className="flex flex-col items-center gap-1.5 sm:gap-2">
+            <a href="#divisions-overview" className="flex flex-col items-center gap-1.5 sm:gap-2">
               <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="text-[10px] sm:text-sm">Divisions</span>
-            </Link>
+            </a>
           </Button>
           <Button asChild variant="outline" className="h-auto py-3 sm:py-4">
             <Link to="/admin/programs" className="flex flex-col items-center gap-1.5 sm:gap-2">
@@ -217,7 +217,7 @@ export default function SuperAdminDashboard() {
           </Card>
 
           {/* Divisions Overview */}
-          <Card>
+          <Card id="divisions-overview">
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 sm:pb-6">
               <div>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
