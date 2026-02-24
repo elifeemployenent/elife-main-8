@@ -229,7 +229,7 @@ export default function SuperAdminDashboard() {
                 </CardDescription>
               </div>
               <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                <Link to="/divisions">View All</Link>
+                <Link to="/admin/admins">View All</Link>
               </Button>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
