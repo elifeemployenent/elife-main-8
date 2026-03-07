@@ -117,7 +117,7 @@ export default function AdminsManagement() {
     fetchAdmins();
   };
 
-  const handleEdit = async (data: { fullName: string; phone: string; password: string; divisionId: string; isReadOnly: boolean }) => {
+  const handleEdit = async (data: { fullName: string; phone: string; password: string; divisionId: string; isReadOnly: boolean; cashCollectionEnabled: boolean }) => {
     if (!editingAdmin) return;
     const phone = data.phone.replace(/\s+/g, "").trim();
 
