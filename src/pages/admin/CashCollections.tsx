@@ -167,6 +167,7 @@ export default function CashCollections() {
 
   // Access checks (after all hooks)
   if (!isAdmin && !isSuperAdmin) return <Navigate to="/unauthorized" replace />;
+  if (isAdmin && !isSuperAdmin && !adminData?.cash_collection_enabled) return <Navigate to="/admin-dashboard" replace />;
 
   const hasAccess =
     isSuperAdmin ||
