@@ -398,6 +398,9 @@ export function AgentWorkLog({ agent }: AgentWorkLogProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Direct Reports Work History */}
+      <DirectReportsWorkHistory agentId={agent.id} agentRole={agent.role} />
     </div>
   );
 }
