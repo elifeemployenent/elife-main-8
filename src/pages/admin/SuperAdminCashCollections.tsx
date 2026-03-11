@@ -390,7 +390,7 @@ export default function SuperAdminCashCollections() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {collections.map((c) => (
+                          {filteredCollections.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell className="font-mono text-xs">{c.receipt_number}</TableCell>
                               <TableCell className="text-xs">{c.divisions?.name || "—"}</TableCell>
