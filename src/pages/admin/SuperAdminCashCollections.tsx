@@ -372,7 +372,7 @@ export default function SuperAdminCashCollections() {
                 <CardContent>
                   {isLoading ? (
                     <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-                  ) : collections.length === 0 ? (
+                  ) : filteredCollections.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">No data</p>
                   ) : (
                     <div className="overflow-x-auto">
