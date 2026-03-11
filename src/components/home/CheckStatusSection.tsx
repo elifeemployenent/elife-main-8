@@ -25,6 +25,8 @@ interface AgentResult {
   mobile: string;
   role: string;
   ward: string;
+  customer_count: number;
+  parent_agent_id: string | null;
   panchayath?: { name: string } | null;
 }
 
