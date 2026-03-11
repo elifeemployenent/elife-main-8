@@ -70,6 +70,41 @@ export type Database = {
           },
         ]
       }
+      agent_work_logs: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          work_date: string
+          work_details: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          work_date?: string
+          work_details?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          work_date?: string
+          work_details?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_work_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_collections: {
         Row: {
           amount: number
