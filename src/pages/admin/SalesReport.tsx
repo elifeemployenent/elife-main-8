@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { pennyekartClient } from "@/lib/pennyekartClient";
+import { syncPennyekartData, loadCachedData } from "@/lib/pennyekartSync";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,15 @@ import {
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Link, Navigate } from "react-router-dom";
 import { 
   ShoppingCart, Package, Layers, TrendingUp, ArrowLeft, Loader2, 
-  IndianRupee, BarChart3, AlertCircle, RefreshCw
+  IndianRupee, AlertCircle, RefreshCw, CheckCircle2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -30,7 +31,7 @@ interface Product {
   category: string;
   stock: number;
   is_active: boolean;
-  created_at: string;
+  source_created_at?: string;
   section: string;
   discount_rate: number;
   coming_soon: boolean;
@@ -56,22 +57,12 @@ interface Order {
   id: string;
   total_amount: number;
   status: string;
-  created_at: string;
+  source_created_at?: string;
   customer_name?: string;
   customer_phone?: string;
   items?: any;
   payment_method?: string;
   delivery_address?: string;
-}
-
-interface ProductVariant {
-  id: string;
-  product_id: string;
-  variant_label: string;
-  price: number;
-  mrp: number;
-  stock: number;
-  is_active: boolean;
 }
 
 const CHART_COLORS = [
@@ -90,41 +81,59 @@ export default function SalesReport() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  // Load cached data from local DB on mount
+  const loadCached = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [productsRes, categoriesRes, ordersRes, variantsRes] = await Promise.all([
-        pennyekartClient.from("products").select("*"),
-        pennyekartClient.from("categories").select("*"),
-        pennyekartClient.from("orders").select("*").order("created_at", { ascending: false }),
-        pennyekartClient.from("product_variants").select("*"),
-      ]);
-
-      if (productsRes.error) throw productsRes.error;
-      if (categoriesRes.error) throw categoriesRes.error;
-      if (ordersRes.error) throw ordersRes.error;
-      if (variantsRes.error) throw variantsRes.error;
-
-      setProducts(productsRes.data || []);
-      setCategories(categoriesRes.data || []);
-      setOrders(ordersRes.data || []);
-      setVariants(variantsRes.data || []);
+      const cached = await loadCachedData();
+      setProducts(cached.products);
+      setCategories(cached.categories);
+      setOrders(cached.orders);
+      if (cached.products.length > 0) {
+        const syncTime = (cached.products[0] as any).synced_at;
+        if (syncTime) setLastSynced(new Date(syncTime).toLocaleString("en-IN"));
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to fetch data from pennyekart.com");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Sync: fetch from pennyekart, upsert to local DB, then reload
+  const handleSync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const result = await syncPennyekartData();
+      if (result.error) {
+        toast.error("Sync partially failed: " + result.error);
+      } else {
+        toast.success(`Synced ${result.products.length} products, ${result.categories.length} categories, ${result.orders.length} orders`);
+      }
+      // Reload from local DB to show updated data
+      await loadCached();
+    } catch (err: any) {
+      setError(err.message || "Failed to sync data from pennyekart.com");
+      toast.error("Sync failed: " + (err.message || "Unknown error"));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
+    // Load cached first, then auto-sync
+    loadCached().then(() => {
+      handleSync();
+    });
   }, []);
 
   const stats = useMemo(() => {
@@ -222,13 +231,19 @@ export default function SalesReport() {
                 Pennyekart Sales Report
               </h1>
               <p className="text-sm text-muted-foreground">
-                Real-time data from pennyekart.com
+                Data synced from pennyekart.com → stored in database
+                {lastSynced && (
+                  <span className="ml-2 text-xs">
+                    <CheckCircle2 className="inline h-3 w-3 text-green-500 mr-1" />
+                    Last synced: {lastSynced}
+                  </span>
+                )}
               </p>
             </div>
           </div>
-          <Button variant="outline" onClick={fetchData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+          <Button variant="outline" onClick={handleSync} disabled={syncing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync & Refresh"}
           </Button>
         </div>
 
@@ -241,7 +256,7 @@ export default function SalesReport() {
           </Card>
         )}
 
-        {loading ? (
+        {loading && products.length === 0 ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -273,7 +288,6 @@ export default function SalesReport() {
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Category Distribution */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Products by Category</CardTitle>
@@ -296,7 +310,6 @@ export default function SalesReport() {
                     </CardContent>
                   </Card>
 
-                  {/* Price Distribution */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Price Distribution</CardTitle>
@@ -315,7 +328,6 @@ export default function SalesReport() {
                     </CardContent>
                   </Card>
 
-                  {/* Margin Analysis */}
                   <Card className="lg:col-span-2">
                     <CardHeader>
                       <CardTitle className="text-lg">Top 10 Products by Margin %</CardTitle>
@@ -451,7 +463,7 @@ export default function SalesReport() {
                                 <Badge variant="outline">{order.status}</Badge>
                               </TableCell>
                               <TableCell className="text-right">₹{order.total_amount?.toLocaleString("en-IN")}</TableCell>
-                              <TableCell>{new Date(order.created_at).toLocaleDateString("en-IN")}</TableCell>
+                              <TableCell>{order.source_created_at ? new Date(order.source_created_at).toLocaleDateString("en-IN") : "—"}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
