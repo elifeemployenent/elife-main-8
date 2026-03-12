@@ -190,6 +190,16 @@ const App = () => (
               }
             />
 
+            {/* Pennyekart Sales Report - Super Admin only */}
+            <Route
+              path="/admin/sales-report"
+              element={
+                <ProtectedRoute requiredRoles={["super_admin"]}>
+                  <SalesReport />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
