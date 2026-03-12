@@ -19,6 +19,16 @@ interface CollectionResult {
   division?: { name: string } | null;
 }
 
+interface OldPaymentResult {
+  id: string;
+  name: string;
+  mobile: string;
+  category: string;
+  fee_paid: number;
+  approved_by: string;
+  approved_date: string;
+}
+
 interface AgentResult {
   id: string;
   name: string;
