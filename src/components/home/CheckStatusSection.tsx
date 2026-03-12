@@ -119,7 +119,7 @@ export function CheckStatusSection() {
     }
   };
 
-  const hasResults = collections.length > 0 || agentInfo;
+  const hasResults = collections.length > 0 || oldPayments.length > 0 || agentInfo;
 
   return (
     <section className="py-12 lg:py-16 bg-muted/30">
