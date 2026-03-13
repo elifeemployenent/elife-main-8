@@ -60,7 +60,7 @@ export function CheckStatusSection() {
   const [collections, setCollections] = useState<CollectionResult[]>([]);
   const [oldPayments, setOldPayments] = useState<OldPaymentResult[]>([]);
   const [agentInfo, setAgentInfo] = useState<AgentResult | null>(null);
-
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const handleSearch = async () => {
     const cleaned = mobile.replace(/\D/g, "");
     if (cleaned.length < 10) return;
