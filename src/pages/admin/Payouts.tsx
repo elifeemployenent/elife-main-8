@@ -137,6 +137,21 @@ export default function Payouts() {
     }
   };
 
+  // Build a map to normalize order panchayath_name to the canonical panchayath name
+  const orderPanchayathToCanonical = useMemo(() => {
+    const map: Record<string, string> = {};
+    panchayaths.forEach((p) => {
+      // Direct match
+      map[p.name] = p.name;
+      if (p.name_ml) map[p.name_ml] = p.name;
+      // Combined format: "Name (name_ml)"
+      if (p.name_ml) {
+        map[`${p.name} (${p.name_ml})`] = p.name;
+      }
+    });
+    return map;
+  }, [panchayaths]);
+
   // Filter orders by date & status=delivered
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
@@ -147,11 +162,12 @@ export default function Payouts() {
     });
   }, [orders, fromDate, toDate]);
 
-  // Build sales by panchayath+ward
+  // Build sales by panchayath+ward using canonical names
   const salesMap = useMemo(() => {
     const map: Record<string, number> = {};
     filteredOrders.forEach((o) => {
-      const p = (o.panchayath_name || "Unknown").trim();
+      const rawP = (o.panchayath_name || "Unknown").trim();
+      const p = orderPanchayathToCanonical[rawP] || rawP;
       const w = (o.ward || "Unknown").trim();
       const key = `${p}||${w}`;
       map[key] = (map[key] || 0) + (o.total_amount || 0);
@@ -160,7 +176,7 @@ export default function Payouts() {
       map[pKey] = (map[pKey] || 0) + (o.total_amount || 0);
     });
     return map;
-  }, [filteredOrders]);
+  }, [filteredOrders, orderPanchayathToCanonical]);
 
   // Get panchayath names from agents for the panchayath_id->name mapping
   const panchayathIdToName = useMemo(() => {
