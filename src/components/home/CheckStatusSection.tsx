@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Phone, CheckCircle2, XCircle, Loader2, IndianRupee, User, MapPin, Building2, Users } from "lucide-react";
+import { Search, Phone, CheckCircle2, XCircle, Loader2, IndianRupee, User, MapPin, Building2, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
