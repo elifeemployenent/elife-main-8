@@ -437,6 +437,24 @@ export default function Payouts() {
             </Card>
           </TabsContent>
 
+          {/* Agent Wallets Tab */}
+          <TabsContent value="wallets" className="space-y-4">
+            <AgentWalletsTab
+              payouts={filteredPayouts.map((p) => ({
+                agent_id: p.agent_id,
+                agent_name: p.agent_name,
+                agent_mobile: p.agent_mobile,
+                role: p.role,
+                panchayath_name: p.panchayath_name,
+                ward: p.ward,
+                commission_amount: p.commission_amount,
+              }))}
+              fromDate={fromDate}
+              toDate={toDate}
+              fmt={fmt}
+            />
+          </TabsContent>
+
           {/* Calculate Payouts Tab */}
           <TabsContent value="calculate" className="space-y-4">
             {/* Date Filters */}
