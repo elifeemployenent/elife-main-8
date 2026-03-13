@@ -336,7 +336,11 @@ export default function Payouts() {
 
   const fmt = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  if (authLoading) {
+  // Redirect non-super-admins
+  if (!authLoading && !isSuperAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
