@@ -15,10 +15,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, Navigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, IndianRupee, Save, Calculator, Users, Percent,
+  ArrowLeft, Loader2, IndianRupee, Save, Calculator, Users, Percent, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ROLE_LABELS, ROLE_HIERARCHY, type AgentRole } from "@/hooks/usePennyekartAgents";
+import { AgentWalletsTab } from "@/components/payouts/AgentWalletsTab";
 
 interface CommissionRate {
   id: string;
