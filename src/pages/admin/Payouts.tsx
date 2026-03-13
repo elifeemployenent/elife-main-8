@@ -65,11 +65,6 @@ export default function Payouts() {
   const [panchayathFilter, setPanchayathFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  // Redirect non-super-admins
-  if (!authLoading && !isSuperAdmin) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
   // Load commission rates
   const loadRates = useCallback(async () => {
     const { data } = await supabase
