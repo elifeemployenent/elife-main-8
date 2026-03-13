@@ -115,29 +115,58 @@ export default function SalesReport() {
 
       const now = new Date().toISOString();
 
+      // Helper: find a value by checking multiple possible header names (case-insensitive, partial match)
+      const findVal = (row: any, ...keywords: string[]): any => {
+        const keys = Object.keys(row);
+        for (const kw of keywords) {
+          const kwLower = kw.toLowerCase();
+          // Exact match first
+          const exact = keys.find(k => k.toLowerCase() === kwLower);
+          if (exact && row[exact] !== "" && row[exact] !== undefined) return row[exact];
+        }
+        for (const kw of keywords) {
+          const kwLower = kw.toLowerCase();
+          // Partial/contains match
+          const partial = keys.find(k => k.toLowerCase().includes(kwLower) || kwLower.includes(k.toLowerCase()));
+          if (partial && row[partial] !== "" && row[partial] !== undefined) return row[partial];
+        }
+        return "";
+      };
+
+      const findNum = (row: any, ...keywords: string[]): number => {
+        const v = findVal(row, ...keywords);
+        const n = Number(v);
+        return isNaN(n) ? 0 : n;
+      };
+
+      // Log first row keys for debugging
+      console.log("Excel headers found:", Object.keys(rows[0]));
+
       // Map Excel columns to DB columns
       const mapped = rows.map((row: any) => {
-        const orderId = String(row["Order ID"] || row["order_id"] || row["id"] || "").trim();
+        const orderId = String(findVal(row, "Order ID", "order_id", "id", "OrderID") || "").trim();
         if (!orderId) return null;
 
         return {
           id: orderId,
-          source_created_at: parseExcelDate(row["Date"] || row["date"]) || null,
-          customer_name: String(row["Customer"] || row["customer"] || row["customer_name"] || ""),
-          items: row["Items"] || row["items"] || null,
-          total_amount: Number(row["Sales Amount"] || row["sales_amount"] || row["total_amount"] || 0),
-          collected_amount: Number(row["Collected (Amount)"] || row["Collected"] || row["collected_amount"] || 0),
-          cost_amount: Number(row["Purchase Cost"] || row["purchase_cost"] || row["cost_amount"] || 0),
-          profit_amount: Number(row["Gross Profit"] || row["gross_profit"] || row["profit_amount"] || 0),
-          net_profit: Number(row["Net Profit"] || row["net_profit"] || 0),
-          status: String(row["Status"] || row["status"] || "pending").toLowerCase(),
-          godown: String(row["Godown"] || row["godown"] || ""),
-          godown_type: String(row["Godown Type"] || row["godown_type"] || ""),
-          panchayath_name: String(row["Panchayath"] || row["panchayath_name"] || row["panchayath"] || ""),
-          district: String(row["District"] || row["district"] || ""),
-          ward: String(row["Ward"] || row["ward"] || ""),
-          self_pickup: String(row["Self"] || row["self_pickup"] || ""),
-          delivery: String(row["Delivery"] || row["delivery"] || ""),
+          source_created_at: parseExcelDate(findVal(row, "Date", "date", "Created")) || null,
+          customer_name: String(findVal(row, "Customer", "customer_name", "Name") || ""),
+          items: findVal(row, "Items", "items", "Item") || null,
+          total_amount: findNum(row, "Sales", "Sales Amount", "total_amount", "Amount", "Total"),
+          collected_amount: findNum(row, "Collected", "Amount Collected", "collected_amount"),
+          cost_amount: findNum(row, "Purchase", "Purchase Cost", "cost_amount", "Cost"),
+          profit_amount: findNum(row, "Gross Profit", "gross_profit", "profit_amount", "Profit"),
+          net_profit: findNum(row, "Net Profit", "net_profit", "Net"),
+          status: String(findVal(row, "Status", "status") || "pending").toLowerCase().replace(/[()]/g, "").trim(),
+          godown: String(findVal(row, "Godown", "godown") || ""),
+          godown_type: String(findVal(row, "Godown Type", "godown_type") || ""),
+          panchayath_name: String(findVal(row, "Panchayath", "Panchayati", "panchayath_name", "Panchayat") || ""),
+          district: String(findVal(row, "District", "district") || ""),
+          ward: String(findVal(row, "Ward", "ward") || ""),
+          self_pickup: String(findVal(row, "Self", "self_pickup", "Self Pickup") || ""),
+          delivery: String(findVal(row, "Delivery", "delivery") || ""),
+          customer_phone: String(findVal(row, "Phone", "Mobile", "phone", "customer_phone") || ""),
+          payment_method: String(findVal(row, "Payment", "payment_method", "Payment Method") || ""),
           synced_at: now,
           uploaded_at: now,
         };
