@@ -70,6 +70,8 @@ async function validateAuth(req: Request, supabase: any) {
         adminName: profile?.full_name || userData.user.email || "Super Admin",
         isReadOnly: false,
         isSuperAdmin: true,
+        cashCollectionEnabled: true,
+        cashCollectionDivisionIds: [],
       };
     } catch {
       return null;
