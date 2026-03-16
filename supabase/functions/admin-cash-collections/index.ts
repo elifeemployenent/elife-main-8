@@ -101,6 +101,19 @@ Deno.serve(async (req) => {
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
+    const requestedDivisionId = url.searchParams.get("division_id");
+
+    // Check if admin has access to the requested division for cash collections
+    if (!admin.isSuperAdmin && requestedDivisionId && requestedDivisionId !== admin.divisionId) {
+      const hasCashAccess = admin.cashCollectionEnabled && 
+        admin.cashCollectionDivisionIds.includes(requestedDivisionId);
+      if (!hasCashAccess) {
+        return new Response(JSON.stringify({ error: "No cash collection access for this division" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // SEARCH: Find members/registrations by mobile number
     if (req.method === "GET" && action === "search_mobile") {
