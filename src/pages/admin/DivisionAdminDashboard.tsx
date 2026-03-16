@@ -168,7 +168,7 @@ export default function DivisionAdminDashboard() {
               </Link>
             </Button>
           )}
-          {adminData?.cash_collection_enabled && (
+          {adminData?.cash_collection_enabled && (adminData?.cash_collection_division_ids || []).includes(divisionId || "") && (
             <Button asChild variant="outline" className="h-auto py-3 sm:py-4">
               <Link to={`/admin/division/${divisionId}/cash-collections`} className="flex flex-col items-center gap-1.5 sm:gap-2">
                 <IndianRupee className="h-5 w-5 sm:h-6 sm:w-6" />

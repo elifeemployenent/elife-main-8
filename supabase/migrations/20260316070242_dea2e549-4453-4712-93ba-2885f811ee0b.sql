@@ -1,0 +1,1 @@
+ALTER TABLE public.admins ADD COLUMN IF NOT EXISTS cash_collection_division_ids uuid[] NOT NULL DEFAULT '{}'::uuid[];

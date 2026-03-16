@@ -27,6 +27,7 @@ interface Admin {
   is_active: boolean;
   is_read_only?: boolean;
   cash_collection_enabled?: boolean;
+  cash_collection_division_ids?: string[];
   created_at: string;
   phone?: string;
   full_name?: string;

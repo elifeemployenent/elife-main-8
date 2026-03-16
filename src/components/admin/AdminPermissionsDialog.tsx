@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, Building2 } from "lucide-react";
+import { Loader2, Shield, Building2, IndianRupee } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
@@ -32,6 +32,8 @@ interface AdminPermissionsDialogProps {
     division_id: string;
     access_all_divisions?: boolean;
     additional_division_ids?: string[];
+    cash_collection_enabled?: boolean;
+    cash_collection_division_ids?: string[];
   } | null;
   divisions: Division[];
   onSaved: () => void;
@@ -46,6 +48,7 @@ export function AdminPermissionsDialog({
 }: AdminPermissionsDialogProps) {
   const [accessAll, setAccessAll] = useState(false);
   const [selectedDivisionIds, setSelectedDivisionIds] = useState<string[]>([]);
+  const [cashCollectionDivisionIds, setCashCollectionDivisionIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -53,11 +56,20 @@ export function AdminPermissionsDialog({
     if (admin) {
       setAccessAll(admin.access_all_divisions ?? false);
       setSelectedDivisionIds(admin.additional_division_ids ?? []);
+      setCashCollectionDivisionIds(admin.cash_collection_division_ids ?? []);
     }
   }, [admin]);
 
   const handleToggleDivision = (divisionId: string) => {
     setSelectedDivisionIds((prev) =>
+      prev.includes(divisionId)
+        ? prev.filter((id) => id !== divisionId)
+        : [...prev, divisionId]
+    );
+  };
+
+  const handleToggleCashCollectionDivision = (divisionId: string) => {
+    setCashCollectionDivisionIds((prev) =>
       prev.includes(divisionId)
         ? prev.filter((id) => id !== divisionId)
         : [...prev, divisionId]
@@ -76,6 +88,15 @@ export function AdminPermissionsDialog({
     }
   };
 
+  const handleSelectAllCashCollection = () => {
+    const allIds = divisions.map((d) => d.id);
+    if (cashCollectionDivisionIds.length === allIds.length) {
+      setCashCollectionDivisionIds([]);
+    } else {
+      setCashCollectionDivisionIds(allIds);
+    }
+  };
+
   const handleSave = async () => {
     if (!admin) return;
     setIsSaving(true);
@@ -86,6 +107,7 @@ export function AdminPermissionsDialog({
         .update({
           access_all_divisions: accessAll,
           additional_division_ids: accessAll ? [] : selectedDivisionIds,
+          cash_collection_division_ids: cashCollectionDivisionIds,
         } as any)
         .eq("id", admin.id);
 
@@ -213,6 +235,72 @@ export function AdminPermissionsDialog({
                   {selectedDivisionIds.length !== 1 ? "s" : ""} selected
                 </p>
               )}
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Cash Collection Division Access */}
+          {admin.cash_collection_enabled && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">
+                    Cash Collection Divisions
+                  </Label>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleSelectAllCashCollection}
+                >
+                  {cashCollectionDivisionIds.length === divisions.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select divisions this admin can manage cash collections for
+              </p>
+              <ScrollArea className="h-[180px] rounded-lg border p-2">
+                <div className="space-y-1">
+                  {divisions.map((division) => (
+                    <label
+                      key={division.id}
+                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
+                    >
+                      <Checkbox
+                        checked={cashCollectionDivisionIds.includes(division.id)}
+                        onCheckedChange={() => handleToggleCashCollectionDivision(division.id)}
+                      />
+                      <span className="text-sm">{division.name}</span>
+                      {division.id === admin.division_id && (
+                        <Badge variant="secondary" className="text-[10px] h-5">Primary</Badge>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+              {cashCollectionDivisionIds.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {cashCollectionDivisionIds.length} division
+                  {cashCollectionDivisionIds.length !== 1 ? "s" : ""} selected for cash collection
+                </p>
+              )}
+            </div>
+          )}
+
+          {admin.cash_collection_enabled === false && (
+            <div className="rounded-lg border p-3 bg-muted/50">
+              <div className="flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Cash collection is disabled for this admin. Enable it in the admin settings first.
+                </span>
+              </div>
             </div>
           )}
         </div>
