@@ -237,6 +237,73 @@ export function AdminPermissionsDialog({
               )}
             </div>
           )}
+
+          <Separator />
+
+          {/* Cash Collection Division Access */}
+          {admin.cash_collection_enabled && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">
+                    Cash Collection Divisions
+                  </Label>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleSelectAllCashCollection}
+                >
+                  {cashCollectionDivisionIds.length === divisions.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select divisions this admin can manage cash collections for
+              </p>
+              <ScrollArea className="h-[180px] rounded-lg border p-2">
+                <div className="space-y-1">
+                  {divisions.map((division) => (
+                    <label
+                      key={division.id}
+                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent cursor-pointer transition-colors"
+                    >
+                      <Checkbox
+                        checked={cashCollectionDivisionIds.includes(division.id)}
+                        onCheckedChange={() => handleToggleCashCollectionDivision(division.id)}
+                      />
+                      <span className="text-sm">{division.name}</span>
+                      {division.id === admin.division_id && (
+                        <Badge variant="secondary" className="text-[10px] h-5">Primary</Badge>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+              {cashCollectionDivisionIds.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {cashCollectionDivisionIds.length} division
+                  {cashCollectionDivisionIds.length !== 1 ? "s" : ""} selected for cash collection
+                </p>
+              )}
+            </div>
+          )}
+
+          {admin.cash_collection_enabled === false && (
+            <div className="rounded-lg border p-3 bg-muted/50">
+              <div className="flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Cash collection is disabled for this admin. Enable it in the admin settings first.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0 mt-4">
