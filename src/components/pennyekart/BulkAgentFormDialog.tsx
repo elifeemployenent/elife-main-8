@@ -395,7 +395,7 @@ export function BulkAgentFormDialog({
   const onSubmitBulk = async (values: BulkAgentFormValues) => {
     try {
       const isPro = values.role === "pro";
-      const isTeamLeader = values.role === "team_leader";
+      const isTopLevel = values.role === "team_leader" || values.role === "scode";
       const isCoordinator = values.role === "coordinator";
 
       const agentsToInsert = values.agents.map(a => ({
@@ -404,7 +404,7 @@ export function BulkAgentFormDialog({
         role: values.role,
         panchayath_id: values.panchayath_id,
         ward: a.ward,
-        parent_agent_id: isTeamLeader ? null : (values.parent_agent_id || null),
+        parent_agent_id: isTopLevel ? null : (values.parent_agent_id || null),
         customer_count: isPro ? a.customer_count : 0,
         responsible_panchayath_ids: [] as string[],
         responsible_wards: isCoordinator ? values.responsible_wards : [] as string[],
