@@ -111,7 +111,7 @@ export function AdminFormDialog({
     setIsSubmitting(true);
 
     try {
-      await onSubmit({ fullName, phone, password, divisionId, isReadOnly, cashCollectionEnabled });
+      await onSubmit({ fullName, phone, password, divisionId, isReadOnly, cashCollectionEnabled, cashCollectionDivisionIds: cashCollectionEnabled ? cashCollectionDivisionIds : [] });
       handleOpenChange(false);
     } catch (err: any) {
       setError(err.message || `Failed to ${mode} admin`);
