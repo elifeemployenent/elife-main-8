@@ -54,9 +54,18 @@ const ROLE_COLORS: Record<AgentRole, string> = {
   pro: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
 };
 
+const AVATAR_BG: Record<AgentRole, string> = {
+  scode: "bg-rose-200 text-rose-700 dark:bg-rose-800 dark:text-rose-200",
+  team_leader: "bg-purple-200 text-purple-700 dark:bg-purple-800 dark:text-purple-200",
+  coordinator: "bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-200",
+  group_leader: "bg-green-200 text-green-700 dark:bg-green-800 dark:text-green-200",
+  pro: "bg-orange-200 text-orange-700 dark:bg-orange-800 dark:text-orange-200",
+};
+
 export function AgentDetailsPanel({ 
   agent, 
   allAgents, 
+  panchayaths,
   onEdit, 
   onDelete, 
   onAddChild,
