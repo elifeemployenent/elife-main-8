@@ -15,12 +15,22 @@ async function validateAuth(req: Request, supabase: any) {
       const decoded = JSON.parse(atob(payload));
       if (!decoded.exp || decoded.exp <= Date.now()) return null;
       if (!decoded.admin_id || !decoded.division_id) return null;
+
+      // Fetch admin record to get cash_collection_division_ids
+      const { data: adminRecord } = await supabase
+        .from("admins")
+        .select("full_name, is_read_only, cash_collection_enabled, cash_collection_division_ids")
+        .eq("id", decoded.admin_id)
+        .single();
+
       return {
         adminId: decoded.admin_id,
         divisionId: decoded.division_id,
-        adminName: decoded.full_name || "Admin",
-        isReadOnly: decoded.is_read_only || false,
+        adminName: adminRecord?.full_name || decoded.full_name || "Admin",
+        isReadOnly: adminRecord?.is_read_only || false,
         isSuperAdmin: false,
+        cashCollectionEnabled: adminRecord?.cash_collection_enabled || false,
+        cashCollectionDivisionIds: adminRecord?.cash_collection_division_ids || [],
       };
     } catch {
       // fall through to JWT check
