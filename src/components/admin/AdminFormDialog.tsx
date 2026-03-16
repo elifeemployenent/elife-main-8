@@ -37,6 +37,7 @@ interface AdminFormDialogProps {
     divisionId: string;
     isReadOnly: boolean;
     cashCollectionEnabled: boolean;
+    cashCollectionDivisionIds: string[];
   }) => Promise<void>;
   mode: "create" | "edit";
   initialData?: {
@@ -45,6 +46,7 @@ interface AdminFormDialogProps {
     divisionId: string;
     isReadOnly: boolean;
     cashCollectionEnabled: boolean;
+    cashCollectionDivisionIds: string[];
   };
 }
 
