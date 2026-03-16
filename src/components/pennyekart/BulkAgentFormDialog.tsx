@@ -58,8 +58,8 @@ const singleAgentSchema = z.object({
   responsible_panchayath_ids: z.array(z.string().uuid()).default([]),
   responsible_wards: z.array(z.string()).default([]),
 }).superRefine((data, ctx) => {
-  // Ward is required for non-team-leader roles
-  if (data.role !== "team_leader" && (!data.ward || data.ward.trim() === "")) {
+  // Ward is required for non-top-level roles
+  if (data.role !== "team_leader" && data.role !== "scode" && (!data.ward || data.ward.trim() === "")) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Ward is required",
