@@ -332,10 +332,10 @@ export function BulkAgentFormDialog({
 
   const onSubmitSingle = async (values: SingleAgentFormValues) => {
     try {
-      // Team leaders don't have parents
-      if (values.role === "team_leader") {
+      // Top-level roles don't have parents
+      if (values.role === "team_leader" || values.role === "scode") {
         values.parent_agent_id = null;
-        // Set ward to "N/A" for team leaders as they manage multiple panchayaths
+        // Set ward to "N/A" for top-level roles
         if (!values.ward) {
           values.ward = "N/A";
         }
