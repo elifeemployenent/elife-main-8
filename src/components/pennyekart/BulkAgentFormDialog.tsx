@@ -817,7 +817,7 @@ function SingleFormContent({
       </div>
 
       {/* Responsibility Section - Only for Team Leaders and Coordinators */}
-      {(selectedRole === "team_leader" || selectedRole === "coordinator") && (
+      {(selectedRole === "team_leader" || selectedRole === "scode" || selectedRole === "coordinator") && (
         <>
           <Separator className="my-2" />
           
