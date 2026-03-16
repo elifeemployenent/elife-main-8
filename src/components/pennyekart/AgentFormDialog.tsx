@@ -230,7 +230,7 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
   };
 
   const parentRole = getParentRole(selectedRole);
-  const needsParent = selectedRole !== "team_leader";
+  const needsParent = selectedRole !== "team_leader" && selectedRole !== "scode";
 
   const handleResponsiblePanchayathToggle = (panchayathId: string, checked: boolean) => {
     const current = form.getValues("responsible_panchayath_ids") || [];
