@@ -304,7 +304,6 @@ export function AdminPermissionsDialog({
             </div>
           )}
         </div>
-        </div>
 
         <DialogFooter className="gap-2 sm:gap-0 mt-4">
           <Button
