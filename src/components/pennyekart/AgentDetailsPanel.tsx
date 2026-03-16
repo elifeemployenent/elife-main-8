@@ -82,6 +82,12 @@ export function AgentDetailsPanel({
     return children.reduce((sum, child) => sum + calculateTotalCustomers(child), 0);
   };
 
+  const initials = agent.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+
+  const responsiblePanchayathNames = (agent.responsible_panchayath_ids || [])
+    .map(id => panchayaths?.find(p => p.id === id)?.name)
+    .filter(Boolean);
+
   const totalCustomers = calculateTotalCustomers(agent);
 
   return (
