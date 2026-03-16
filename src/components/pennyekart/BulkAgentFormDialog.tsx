@@ -66,8 +66,8 @@ const singleAgentSchema = z.object({
       path: ["ward"],
     });
   }
-  // Parent agent is required for non-team-leader roles
-  if (data.role !== "team_leader" && !data.parent_agent_id) {
+  // Parent agent is required for non-top-level roles
+  if (data.role !== "team_leader" && data.role !== "scode" && !data.parent_agent_id) {
     const parentRoleLabel = data.role === "pro" ? "Group Leader" : data.role === "group_leader" ? "Coordinator" : "Team Leader";
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
