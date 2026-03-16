@@ -44,6 +44,7 @@ import {
   getChildRole
 } from "@/hooks/usePennyekartAgents";
 import { AgentHierarchyTree } from "@/components/pennyekart/AgentHierarchyTree";
+import { AgentProfileCard } from "@/components/pennyekart/AgentProfileCard";
 import { BulkAgentFormDialog } from "@/components/pennyekart/BulkAgentFormDialog";
 import { AgentDetailsPanel } from "@/components/pennyekart/AgentDetailsPanel";
 import { toast } from "sonner";
