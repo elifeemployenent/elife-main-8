@@ -1,0 +1,1 @@
+ALTER TYPE public.pennyekart_agent_role ADD VALUE IF NOT EXISTS 'scode' BEFORE 'team_leader';
