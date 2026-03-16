@@ -11,8 +11,12 @@ import {
   Edit, 
   Trash2, 
   UserPlus,
-  X
+  X,
+  Network,
+  Calendar,
+  Shield,
 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { 
   PennyekartAgent, 
@@ -35,6 +39,7 @@ import {
 interface AgentDetailsPanelProps {
   agent: PennyekartAgent;
   allAgents: PennyekartAgent[];
+  panchayaths?: { id: string; name: string }[];
   onEdit: () => void;
   onDelete: () => void;
   onAddChild: () => void;
@@ -42,15 +47,25 @@ interface AgentDetailsPanelProps {
 }
 
 const ROLE_COLORS: Record<AgentRole, string> = {
+  scode: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
   team_leader: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   coordinator: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   group_leader: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   pro: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
 };
 
+const AVATAR_BG: Record<AgentRole, string> = {
+  scode: "bg-rose-200 text-rose-700 dark:bg-rose-800 dark:text-rose-200",
+  team_leader: "bg-purple-200 text-purple-700 dark:bg-purple-800 dark:text-purple-200",
+  coordinator: "bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-200",
+  group_leader: "bg-green-200 text-green-700 dark:bg-green-800 dark:text-green-200",
+  pro: "bg-orange-200 text-orange-700 dark:bg-orange-800 dark:text-orange-200",
+};
+
 export function AgentDetailsPanel({ 
   agent, 
   allAgents, 
+  panchayaths,
   onEdit, 
   onDelete, 
   onAddChild,
@@ -66,6 +81,12 @@ export function AgentDetailsPanel({
     const children = allAgents.filter(c => c.parent_agent_id === a.id);
     return children.reduce((sum, child) => sum + calculateTotalCustomers(child), 0);
   };
+
+  const initials = agent.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+
+  const responsiblePanchayathNames = (agent.responsible_panchayath_ids || [])
+    .map(id => panchayaths?.find(p => p.id === id)?.name)
+    .filter(Boolean);
 
   const totalCustomers = calculateTotalCustomers(agent);
 
@@ -83,32 +104,67 @@ export function AgentDetailsPanel({
         </Button>
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
-        {/* Basic Info */}
-        <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
-            <h3 className="text-lg sm:text-xl font-semibold">{agent.name}</h3>
-            <Badge className={cn("text-xs", ROLE_COLORS[agent.role])}>
-              {ROLE_LABELS[agent.role]}
-            </Badge>
-          </div>
-
-          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span>{agent.mobile}</span>
+        {/* Profile Header with Avatar */}
+        <div className="flex items-start gap-3">
+          <Avatar className={cn("h-14 w-14 text-xl font-bold", AVATAR_BG[agent.role])}>
+            <AvatarFallback className={AVATAR_BG[agent.role]}>
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg sm:text-xl font-semibold truncate">{agent.name}</h3>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <Badge className={cn("text-xs", ROLE_COLORS[agent.role])}>
+                {ROLE_LABELS[agent.role]}
+              </Badge>
+              {!agent.is_active && (
+                <Badge variant="destructive" className="text-xs">Inactive</Badge>
+              )}
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="truncate">{agent.panchayath?.name || "Unknown"}</span>
-            </div>
-            {agent.ward !== "N/A" && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span>Ward: {agent.ward}</span>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Contact details */}
+        <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span>{agent.mobile}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">{agent.panchayath?.name || "Unknown"}</span>
+          </div>
+          {agent.ward !== "N/A" && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span>Ward: {agent.ward}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span>Joined {new Date(agent.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}</span>
+          </div>
+        </div>
+
+        {/* Responsible Areas */}
+        {responsiblePanchayathNames.length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                <Network className="h-3.5 w-3.5" />
+                Responsible Panchayaths ({responsiblePanchayathNames.length})
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {responsiblePanchayathNames.map((name, i) => (
+                  <Badge key={i} variant="outline" className="text-xs">
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 

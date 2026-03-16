@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AgentRole = "team_leader" | "coordinator" | "group_leader" | "pro";
+export type AgentRole = "scode" | "team_leader" | "coordinator" | "group_leader" | "pro";
 
 export interface PennyekartAgent {
   id: string;
@@ -210,13 +210,14 @@ export function useAgentMutations() {
 }
 
 export const ROLE_LABELS: Record<AgentRole, string> = {
+  scode: "S-Code",
   team_leader: "Team Leader",
   coordinator: "Coordinator",
   group_leader: "Group Leader",
   pro: "PRO"
 };
 
-export const ROLE_HIERARCHY: AgentRole[] = ["team_leader", "coordinator", "group_leader", "pro"];
+export const ROLE_HIERARCHY: AgentRole[] = ["scode", "team_leader", "coordinator", "group_leader", "pro"];
 
 export function getParentRole(role: AgentRole): AgentRole | null {
   const index = ROLE_HIERARCHY.indexOf(role);

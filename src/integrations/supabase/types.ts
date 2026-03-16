@@ -1102,6 +1102,7 @@ export type Database = {
       app_role: "super_admin" | "admin" | "member"
       cash_collection_status: "pending" | "verified" | "submitted"
       pennyekart_agent_role:
+        | "scode"
         | "team_leader"
         | "coordinator"
         | "group_leader"
@@ -1236,6 +1237,7 @@ export const Constants = {
       app_role: ["super_admin", "admin", "member"],
       cash_collection_status: ["pending", "verified", "submitted"],
       pennyekart_agent_role: [
+        "scode",
         "team_leader",
         "coordinator",
         "group_leader",
