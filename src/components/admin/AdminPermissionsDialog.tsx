@@ -107,6 +107,7 @@ export function AdminPermissionsDialog({
         .update({
           access_all_divisions: accessAll,
           additional_division_ids: accessAll ? [] : selectedDivisionIds,
+          cash_collection_division_ids: cashCollectionDivisionIds,
         } as any)
         .eq("id", admin.id);
 
