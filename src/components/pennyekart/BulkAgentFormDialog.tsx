@@ -49,7 +49,7 @@ const singleAgentSchema = z.object({
   // Personal details
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   mobile: z.string().regex(/^[0-9]{10}$/, "Mobile must be 10 digits"),
-  role: z.enum(["team_leader", "coordinator", "group_leader", "pro"] as const),
+  role: z.enum(["scode", "team_leader", "coordinator", "group_leader", "pro"] as const),
   panchayath_id: z.string().min(1, "Select a panchayath"),
   ward: z.string().default(""),
   parent_agent_id: z.string().uuid().nullable().optional(),
