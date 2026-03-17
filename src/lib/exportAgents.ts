@@ -8,18 +8,26 @@ interface PanchayathInfo {
 
 function buildRows(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
   const panchayathMap = new Map(panchayaths.map(p => [p.id, p.name]));
+  const agentMap = new Map(agents.map(a => [a.id, a]));
 
-  return agents.map((agent, i) => ({
-    "#": i + 1,
-    Name: agent.name,
-    Mobile: agent.mobile,
-    Role: ROLE_LABELS[agent.role],
-    Panchayath: agent.panchayath?.name || panchayathMap.get(agent.panchayath_id) || "",
-    Ward: agent.ward,
-    "Customer Count": agent.role === "pro" ? agent.customer_count : "",
-    Status: agent.is_active ? "Active" : "Inactive",
-    "Created At": new Date(agent.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }),
-  }));
+  return agents.map((agent, i) => {
+    const parent = agent.parent_agent_id ? agentMap.get(agent.parent_agent_id) : null;
+    const directReports = agents.filter(a => a.parent_agent_id === agent.id);
+
+    return {
+      "#": i + 1,
+      Name: agent.name,
+      Mobile: agent.mobile,
+      Role: ROLE_LABELS[agent.role],
+      "Reports To": parent ? `${parent.name} (${ROLE_LABELS[parent.role]})` : "",
+      "Direct Reports": directReports.length > 0 ? directReports.map(r => r.name).join(", ") : "",
+      Panchayath: agent.panchayath?.name || panchayathMap.get(agent.panchayath_id) || "",
+      Ward: agent.ward,
+      "Customer Count": agent.role === "pro" ? agent.customer_count : "",
+      Status: agent.is_active ? "Active" : "Inactive",
+      "Created At": new Date(agent.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }),
+    };
+  });
 }
 
 export function exportAgentsToXlsx(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
