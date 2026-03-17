@@ -76,7 +76,7 @@ export function ExportFilterDialog({ open, onOpenChange, agents, onExport }: Exp
     setSelectedAgentId("all");
   };
 
-  const handleExport = (format: "xlsx" | "pdf") => {
+  const handleExport = (format: "xlsx" | "pdf" | "whatsapp") => {
     onExport(filteredAgents, format);
     onOpenChange(false);
   };
