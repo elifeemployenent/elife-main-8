@@ -31,6 +31,7 @@ import SuperAdminCashCollections from "./pages/admin/SuperAdminCashCollections";
 import OldPaymentsUpload from "./pages/admin/OldPaymentsUpload";
 import SalesReport from "./pages/admin/SalesReport";
 import Payouts from "./pages/admin/Payouts";
+import AgentTasks from "./pages/admin/AgentTasks";
 
 const queryClient = new QueryClient();
 
