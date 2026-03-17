@@ -204,6 +204,17 @@ export default function PennyekartAgentHierarchy() {
               variant="outline"
               size="sm"
               className="flex-1 sm:flex-none"
+              asChild
+            >
+              <Link to="/admin/agent-tasks">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Tasks
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none"
               disabled={agents.length === 0}
               onClick={() => setExportDialogOpen(true)}
             >
