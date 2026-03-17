@@ -40,6 +40,8 @@ export function exportAgentsToXlsx(agents: PennyekartAgent[], panchayaths: Panch
     { wch: 25 }, // Name
     { wch: 14 }, // Mobile
     { wch: 16 }, // Role
+    { wch: 30 }, // Reports To
+    { wch: 35 }, // Direct Reports
     { wch: 20 }, // Panchayath
     { wch: 8 },  // Ward
     { wch: 15 }, // Customer Count
