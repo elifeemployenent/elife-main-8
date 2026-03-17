@@ -396,16 +396,49 @@ export default function AgentTasks() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {filteredRootAgents.map((agent) => (
-                    <TaskAgentNode
-                      key={agent.id}
-                      agent={agent}
-                      allAgents={agents}
-                      feedbackMap={feedbackMap}
-                      onFeedback={handleFeedback}
-                      showPendingOnly={showPendingOnly}
-                    />
-                  ))}
+                  {showPendingOnly ? (
+                    // Flat list of only pending agents
+                    agents
+                      .filter((a) => !feedbackMap[a.id])
+                      .map((agent) => (
+                        <div key={agent.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 border-b border-muted/30">
+                          <Clock className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                          <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-medium text-xs sm:text-sm truncate">{agent.name}</span>
+                              <Badge className={cn("text-[10px] px-1.5 py-0", ROLE_COLORS[agent.role])}>
+                                {ROLE_LABELS[agent.role]}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                              <span className="flex items-center gap-0.5"><Phone className="h-2.5 w-2.5" />{agent.mobile}</span>
+                              {agent.ward !== "N/A" && <span className="flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5" />W{agent.ward}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleFeedback(agent.id, "completed")}>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] font-medium border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 gap-1" onClick={() => handleFeedback(agent.id, "not_completed")}>
+                              <XCircle className="h-3 w-3" />
+                              Remark
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    filteredRootAgents.map((agent) => (
+                      <TaskAgentNode
+                        key={agent.id}
+                        agent={agent}
+                        allAgents={agents}
+                        feedbackMap={feedbackMap}
+                        onFeedback={handleFeedback}
+                        showPendingOnly={showPendingOnly}
+                      />
+                    ))
+                  )}
                 </div>
               )}
             </CardContent>
@@ -575,15 +608,16 @@ function TaskAgentNode({
             <CheckCircle2 className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+            className="h-6 px-2 text-[10px] font-medium border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 gap-1"
             onClick={() => {
               setRemarksOpen(!remarksOpen);
             }}
             title="Mark not completed (with remarks)"
           >
-            <XCircle className="h-3.5 w-3.5" />
+            <XCircle className="h-3 w-3" />
+            Remark
           </Button>
         </div>
       </div>
