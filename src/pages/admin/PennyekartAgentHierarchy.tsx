@@ -410,6 +410,20 @@ export default function PennyekartAgentHierarchy() {
           defaultRole={defaultRole}
           onSuccess={refetch}
         />
+
+        {/* Export Filter Dialog */}
+        <ExportFilterDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          agents={agents}
+          onExport={(filteredAgents, format) => {
+            if (format === "xlsx") {
+              exportAgentsToXlsx(filteredAgents, panchayaths);
+            } else {
+              exportAgentsToPdf(filteredAgents, panchayaths);
+            }
+          }}
+        />
       </div>
     </Layout>
   );
