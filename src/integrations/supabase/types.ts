@@ -483,6 +483,95 @@ export type Database = {
         }
         Relationships: []
       }
+      pennyekart_agent_task_feedback: {
+        Row: {
+          agent_id: string
+          created_at: string
+          feedback_by: string | null
+          id: string
+          remarks: string | null
+          status: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          feedback_by?: string | null
+          id?: string
+          remarks?: string | null
+          status?: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          feedback_by?: string | null
+          id?: string
+          remarks?: string | null
+          status?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pennyekart_agent_task_feedback_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pennyekart_agent_task_feedback_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agent_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pennyekart_agent_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          panchayath_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          panchayath_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          panchayath_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pennyekart_agent_tasks_panchayath_id_fkey"
+            columns: ["panchayath_id"]
+            isOneToOne: false
+            referencedRelation: "panchayaths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pennyekart_agents: {
         Row: {
           created_at: string | null
