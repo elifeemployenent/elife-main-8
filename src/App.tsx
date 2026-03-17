@@ -152,6 +152,16 @@ const App = () => (
               }
             />
 
+            {/* Agent Tasks - Admin & Super Admin */}
+            <Route
+              path="/admin/agent-tasks"
+              element={
+                <ProtectedRoute requiredRoles={["admin", "super_admin"]}>
+                  <AgentTasks />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Division Admin Dashboard - Admin & Super Admin */}
             <Route
               path="/admin/division/:divisionId"
