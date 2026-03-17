@@ -173,11 +173,20 @@ export function ExportFilterDialog({ open, onOpenChange, agents, onExport }: Exp
             Excel
           </Button>
           <Button
+            variant="outline"
             onClick={() => handleExport("pdf")}
             disabled={filteredAgents.length === 0}
           >
             <FileText className="h-4 w-4 mr-2" />
             PDF
+          </Button>
+          <Button
+            onClick={() => handleExport("whatsapp")}
+            disabled={filteredAgents.length === 0}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp
           </Button>
         </DialogFooter>
       </DialogContent>
