@@ -49,7 +49,7 @@ import { BulkAgentFormDialog } from "@/components/pennyekart/BulkAgentFormDialog
 import { AgentDetailsPanel } from "@/components/pennyekart/AgentDetailsPanel";
 import { ExportFilterDialog } from "@/components/pennyekart/ExportFilterDialog";
 import { toast } from "sonner";
-import { exportAgentsToXlsx, exportAgentsToPdf } from "@/lib/exportAgents";
+import { exportAgentsToXlsx, exportAgentsToPdf, shareAgentsViaWhatsApp } from "@/lib/exportAgents";
 
 interface Panchayath {
   id: string;
