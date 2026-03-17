@@ -69,6 +69,7 @@ export default function PennyekartAgentHierarchy() {
   const [editingAgent, setEditingAgent] = useState<PennyekartAgent | null>(null);
   const [defaultParentId, setDefaultParentId] = useState<string | null>(null);
   const [defaultRole, setDefaultRole] = useState<AgentRole | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const { agents, isLoading, error, refetch } = usePennyekartAgents(filters);
   const { deleteAgent } = useAgentMutations();
