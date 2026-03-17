@@ -126,7 +126,7 @@ export function exportAgentsToPdf(agents: PennyekartAgent[], panchayaths: Pancha
 
 export function shareAgentsViaWhatsApp(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
   const panchayathMap = new Map(panchayaths.map(p => [p.id, p.name]));
-  const agentMap = new Map(agents.map(a => [a.id, a]));
+  const agentSet = new Set(agents.map(a => a.id));
 
   const totalCustomers = agents
     .filter(a => a.role === "pro")
@@ -137,30 +137,34 @@ export function shareAgentsViaWhatsApp(agents: PennyekartAgent[], panchayaths: P
   text += `👥 Total Agents: ${agents.length}\n`;
   text += `🛒 Total Customers: ${totalCustomers}\n\n`;
 
-  // Group by role
-  const byRole: Partial<Record<AgentRole, PennyekartAgent[]>> = {};
+  // Build hierarchical tree text
+  const childrenMap = new Map<string | null, PennyekartAgent[]>();
   for (const a of agents) {
-    if (!byRole[a.role]) byRole[a.role] = [];
-    byRole[a.role]!.push(a);
+    const parentId = a.parent_agent_id && agentSet.has(a.parent_agent_id) ? a.parent_agent_id : null;
+    if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+    childrenMap.get(parentId)!.push(a);
   }
 
-  const roleOrder: AgentRole[] = ["scode", "team_leader", "coordinator", "group_leader", "pro"];
-  for (const role of roleOrder) {
-    const list = byRole[role];
-    if (!list || list.length === 0) continue;
-    text += `*${ROLE_LABELS[role]}s (${list.length})*\n`;
-    for (const a of list) {
-      const parent = a.parent_agent_id ? agentMap.get(a.parent_agent_id) : null;
-      const pName = a.panchayath?.name || panchayathMap.get(a.panchayath_id) || "";
-      let line = `• ${a.name} - ${a.mobile}`;
-      if (pName) line += ` - ${pName}`;
-      if (a.ward) line += ` W${a.ward}`;
-      if (parent) line += ` (under ${parent.name})`;
-      if (a.role === "pro" && a.customer_count > 0) line += ` [${a.customer_count} customers]`;
-      text += line + "\n";
-    }
-    text += "\n";
+  function formatAgent(a: PennyekartAgent): string {
+    const pName = a.panchayath?.name || panchayathMap.get(a.panchayath_id) || "";
+    let line = `${a.name} - ${a.mobile}`;
+    if (pName) line += ` - ${pName}`;
+    if (a.ward) line += ` W${a.ward}`;
+    if (a.role === "pro" && a.customer_count > 0) line += ` [${a.customer_count} customers]`;
+    return line;
   }
+
+  function renderTree(parentId: string | null, indent: string) {
+    const children = childrenMap.get(parentId) || [];
+    for (const child of children) {
+      const roleEmoji = child.role === "scode" ? "👑" : child.role === "team_leader" ? "🏅" : child.role === "coordinator" ? "📋" : child.role === "group_leader" ? "👥" : "🛒";
+      text += `${indent}${roleEmoji} *${ROLE_LABELS[child.role]}*: ${formatAgent(child)}\n`;
+      renderTree(child.id, indent + "    ");
+    }
+  }
+
+  // Roots are agents whose parent is not in the filtered set
+  renderTree(null, "");
 
   const encoded = encodeURIComponent(text.trim());
   window.open(`https://wa.me/?text=${encoded}`, "_blank");
