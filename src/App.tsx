@@ -31,6 +31,7 @@ import SuperAdminCashCollections from "./pages/admin/SuperAdminCashCollections";
 import OldPaymentsUpload from "./pages/admin/OldPaymentsUpload";
 import SalesReport from "./pages/admin/SalesReport";
 import Payouts from "./pages/admin/Payouts";
+import AgentTasks from "./pages/admin/AgentTasks";
 
 const queryClient = new QueryClient();
 
@@ -147,6 +148,16 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["admin", "super_admin"]}>
                   <PennyekartAgentHierarchy />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Agent Tasks - Admin & Super Admin */}
+            <Route
+              path="/admin/agent-tasks"
+              element={
+                <ProtectedRoute requiredRoles={["admin", "super_admin"]}>
+                  <AgentTasks />
                 </ProtectedRoute>
               }
             />

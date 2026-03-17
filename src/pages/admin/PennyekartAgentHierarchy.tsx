@@ -30,6 +30,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  ClipboardList,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,6 +201,17 @@ export default function PennyekartAgentHierarchy() {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none"
+              asChild
+            >
+              <Link to="/admin/agent-tasks">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Tasks
+              </Link>
+            </Button>
             <Button
               variant="outline"
               size="sm"
