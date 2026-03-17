@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { PennyekartAgent, ROLE_LABELS } from "@/hooks/usePennyekartAgents";
+import { PennyekartAgent, ROLE_LABELS, AgentRole } from "@/hooks/usePennyekartAgents";
 
 interface PanchayathInfo {
   id: string;
@@ -56,15 +56,14 @@ export function exportAgentsToXlsx(agents: PennyekartAgent[], panchayaths: Panch
   XLSX.writeFile(wb, `Pennyekart_Agents_${timestamp}.xlsx`);
 }
 
-export function exportAgentsToPdf(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
+function buildPdfHtml(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
   const rows = buildRows(agents, panchayaths);
 
   const totalCustomers = agents
     .filter(a => a.role === "pro")
     .reduce((sum, a) => sum + a.customer_count, 0);
 
-  // Build HTML table for PDF
-  const html = `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -103,11 +102,66 @@ export function exportAgentsToPdf(agents: PennyekartAgent[], panchayaths: Pancha
   </table>
 </body>
 </html>`;
+}
 
-  const printWindow = window.open("", "_blank");
+export function exportAgentsToPdf(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
+  const html = buildPdfHtml(agents, panchayaths);
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url, "_blank");
   if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.onload = () => printWindow.print();
+    printWindow.onload = () => {
+      printWindow.print();
+      URL.revokeObjectURL(url);
+    };
+  } else {
+    // Fallback: download as HTML file
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Pennyekart_Agents_${new Date().toISOString().split("T")[0]}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
+}
+
+export function shareAgentsViaWhatsApp(agents: PennyekartAgent[], panchayaths: PanchayathInfo[]) {
+  const panchayathMap = new Map(panchayaths.map(p => [p.id, p.name]));
+  const agentMap = new Map(agents.map(a => [a.id, a]));
+
+  const totalCustomers = agents
+    .filter(a => a.role === "pro")
+    .reduce((sum, a) => sum + a.customer_count, 0);
+
+  let text = `*Pennyekart Agents Report*\n`;
+  text += `📅 ${new Date().toLocaleDateString("en-IN", { dateStyle: "medium" })}\n`;
+  text += `👥 Total Agents: ${agents.length}\n`;
+  text += `🛒 Total Customers: ${totalCustomers}\n\n`;
+
+  // Group by role
+  const byRole: Partial<Record<AgentRole, PennyekartAgent[]>> = {};
+  for (const a of agents) {
+    if (!byRole[a.role]) byRole[a.role] = [];
+    byRole[a.role]!.push(a);
+  }
+
+  const roleOrder: AgentRole[] = ["scode", "team_leader", "coordinator", "group_leader", "pro"];
+  for (const role of roleOrder) {
+    const list = byRole[role];
+    if (!list || list.length === 0) continue;
+    text += `*${ROLE_LABELS[role]}s (${list.length})*\n`;
+    for (const a of list) {
+      const parent = a.parent_agent_id ? agentMap.get(a.parent_agent_id) : null;
+      const pName = a.panchayath?.name || panchayathMap.get(a.panchayath_id) || "";
+      let line = `• ${a.name} - ${a.mobile}`;
+      if (pName) line += ` - ${pName}`;
+      if (a.ward) line += ` W${a.ward}`;
+      if (parent) line += ` (under ${parent.name})`;
+      if (a.role === "pro" && a.customer_count > 0) line += ` [${a.customer_count} customers]`;
+      text += line + "\n";
+    }
+    text += "\n";
+  }
+
+  const encoded = encodeURIComponent(text.trim());
+  window.open(`https://wa.me/?text=${encoded}`, "_blank");
 }

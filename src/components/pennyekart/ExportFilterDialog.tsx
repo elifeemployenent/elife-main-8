@@ -16,14 +16,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { FileSpreadsheet, FileText, Users, ChevronRight } from "lucide-react";
+import { FileSpreadsheet, FileText, Users, ChevronRight, MessageCircle } from "lucide-react";
 import { PennyekartAgent, ROLE_LABELS, ROLE_HIERARCHY, AgentRole } from "@/hooks/usePennyekartAgents";
 
 interface ExportFilterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agents: PennyekartAgent[];
-  onExport: (filteredAgents: PennyekartAgent[], format: "xlsx" | "pdf") => void;
+  onExport: (filteredAgents: PennyekartAgent[], format: "xlsx" | "pdf" | "whatsapp") => void;
 }
 
 /** Recursively collect all descendants of a given agent */
@@ -76,7 +76,7 @@ export function ExportFilterDialog({ open, onOpenChange, agents, onExport }: Exp
     setSelectedAgentId("all");
   };
 
-  const handleExport = (format: "xlsx" | "pdf") => {
+  const handleExport = (format: "xlsx" | "pdf" | "whatsapp") => {
     onExport(filteredAgents, format);
     onOpenChange(false);
   };
@@ -173,11 +173,20 @@ export function ExportFilterDialog({ open, onOpenChange, agents, onExport }: Exp
             Excel
           </Button>
           <Button
+            variant="outline"
             onClick={() => handleExport("pdf")}
             disabled={filteredAgents.length === 0}
           >
             <FileText className="h-4 w-4 mr-2" />
             PDF
+          </Button>
+          <Button
+            onClick={() => handleExport("whatsapp")}
+            disabled={filteredAgents.length === 0}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp
           </Button>
         </DialogFooter>
       </DialogContent>
