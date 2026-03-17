@@ -575,15 +575,16 @@ function TaskAgentNode({
             <CheckCircle2 className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+            className="h-6 px-2 text-[10px] font-medium border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 gap-1"
             onClick={() => {
               setRemarksOpen(!remarksOpen);
             }}
             title="Mark not completed (with remarks)"
           >
-            <XCircle className="h-3.5 w-3.5" />
+            <XCircle className="h-3 w-3" />
+            Remark
           </Button>
         </div>
       </div>
