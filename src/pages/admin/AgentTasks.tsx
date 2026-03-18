@@ -227,6 +227,44 @@ export default function AgentTasks() {
     fetchTasks();
   };
 
+  const handleEditTask = async () => {
+    if (!editTask || !editTitle.trim()) return;
+    setIsEditing(true);
+    const { error } = await supabase
+      .from("pennyekart_agent_tasks")
+      .update({ title: editTitle.trim(), description: editDescription.trim() || null })
+      .eq("id", editTask.id);
+    setIsEditing(false);
+    if (error) {
+      toast.error("Failed to update task");
+      return;
+    }
+    toast.success("Task updated");
+    setEditDialogOpen(false);
+    setEditTask(null);
+    if (selectedTask?.id === editTask.id) {
+      setSelectedTask({ ...selectedTask, title: editTitle.trim(), description: editDescription.trim() || null });
+    }
+    fetchTasks();
+  };
+
+  const handleDeleteTask = async () => {
+    if (!deleteTask) return;
+    setIsDeleting(true);
+    // Delete feedback first, then task
+    await supabase.from("pennyekart_agent_task_feedback").delete().eq("task_id", deleteTask.id);
+    const { error } = await supabase.from("pennyekart_agent_tasks").delete().eq("id", deleteTask.id);
+    setIsDeleting(false);
+    if (error) {
+      toast.error("Failed to delete task");
+      return;
+    }
+    toast.success("Task deleted");
+    if (selectedTask?.id === deleteTask.id) setSelectedTask(null);
+    setDeleteTask(null);
+    fetchTasks();
+  };
+
   const handleFeedback = async (
     agentId: string,
     status: "completed" | "not_completed",
