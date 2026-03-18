@@ -704,6 +704,9 @@ export default function AgentTasks() {
         </AlertDialogContent>
       </AlertDialog>
     </Layout>
+  );
+}
+
 // --- Hierarchy node with feedback controls ---
 
 interface TaskAgentNodeProps {
