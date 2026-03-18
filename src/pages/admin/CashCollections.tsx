@@ -172,6 +172,7 @@ export default function CashCollections() {
   const hasAccess =
     isSuperAdmin ||
     adminData?.access_all_divisions ||
+    divisionId === adminData?.division_id ||
     (adminData?.cash_collection_division_ids || []).includes(divisionId || "");
 
   if (!hasAccess) return <Navigate to="/unauthorized" replace />;
