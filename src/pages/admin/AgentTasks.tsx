@@ -386,7 +386,40 @@ export default function AgentTasks() {
                       )}
                       onClick={() => setSelectedTask(task)}
                     >
-                      <div className="font-medium text-sm">{task.title}</div>
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="font-medium text-sm flex-1 min-w-0">{task.title}</div>
+                        {isSuperAdmin && (
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditTask(task);
+                                setEditTitle(task.title);
+                                setEditDescription(task.description || "");
+                                setEditDialogOpen(true);
+                              }}
+                              title="Edit task"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTask(task);
+                              }}
+                              title="Delete task"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                       {task.description && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {task.description}
