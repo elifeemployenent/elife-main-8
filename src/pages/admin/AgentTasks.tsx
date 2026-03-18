@@ -108,6 +108,13 @@ export default function AgentTasks() {
   const [panchayathSearchOpen, setPanchayathSearchOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState<AgentTask | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleteTask, setDeleteTask] = useState<AgentTask | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load panchayaths
   useEffect(() => {
