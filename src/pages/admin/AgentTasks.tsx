@@ -7,13 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -89,7 +92,8 @@ export default function AgentTasks() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newPanchayathId, setNewPanchayathId] = useState("");
+  const [newPanchayathIds, setNewPanchayathIds] = useState<string[]>([]);
+  const [panchayathSearchOpen, setPanchayathSearchOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
 
@@ -179,27 +183,28 @@ export default function AgentTasks() {
   }
 
   const handleCreateTask = async () => {
-    if (!newTitle.trim() || !newPanchayathId) {
-      toast.error("Title and Panchayath are required");
+    if (!newTitle.trim() || newPanchayathIds.length === 0) {
+      toast.error("Title and at least one Panchayath are required");
       return;
     }
     setIsCreating(true);
-    const { error } = await supabase.from("pennyekart_agent_tasks").insert({
+    const rows = newPanchayathIds.map((pid) => ({
       title: newTitle.trim(),
       description: newDescription.trim() || null,
-      panchayath_id: newPanchayathId,
+      panchayath_id: pid,
       created_by: adminData?.id || null,
-    });
+    }));
+    const { error } = await supabase.from("pennyekart_agent_tasks").insert(rows);
     setIsCreating(false);
     if (error) {
       toast.error("Failed to create task");
       return;
     }
-    toast.success("Task created");
+    toast.success(`Task created for ${newPanchayathIds.length} panchayath(s)`);
     setCreateDialogOpen(false);
     setNewTitle("");
     setNewDescription("");
-    setNewPanchayathId("");
+    setNewPanchayathIds([]);
     fetchTasks();
   };
 
@@ -473,19 +478,66 @@ export default function AgentTasks() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Panchayath *</label>
-              <Select value={newPanchayathId} onValueChange={setNewPanchayathId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select panchayath" />
-                </SelectTrigger>
-                <SelectContent>
-                  {panchayaths.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">Panchayaths *</label>
+              <Popover open={panchayathSearchOpen} onOpenChange={setPanchayathSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full mt-1 justify-between font-normal h-auto min-h-10"
+                  >
+                    <span className="flex flex-wrap gap-1 text-left">
+                      {newPanchayathIds.length === 0 ? (
+                        <span className="text-muted-foreground">Select panchayaths...</span>
+                      ) : (
+                        newPanchayathIds.map((pid) => {
+                          const p = panchayaths.find((x) => x.id === pid);
+                          return (
+                            <Badge key={pid} variant="secondary" className="text-xs">
+                              {p?.name || pid}
+                            </Badge>
+                          );
+                        })
+                      )}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search panchayath..." />
+                    <CommandList>
+                      <CommandEmpty>No panchayath found.</CommandEmpty>
+                      <CommandGroup className="max-h-60 overflow-y-auto">
+                        {panchayaths.map((p) => {
+                          const isSelected = newPanchayathIds.includes(p.id);
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={p.name}
+                              onSelect={() => {
+                                setNewPanchayathIds((prev) =>
+                                  isSelected
+                                    ? prev.filter((id) => id !== p.id)
+                                    : [...prev, p.id]
+                                );
+                              }}
+                            >
+                              <Checkbox checked={isSelected} className="mr-2" />
+                              {p.name}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {newPanchayathIds.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {newPanchayathIds.length} selected
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
