@@ -25,6 +25,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Plus,
   Loader2,
@@ -40,6 +50,8 @@ import {
   Phone,
   MapPin,
   Users,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -96,6 +108,13 @@ export default function AgentTasks() {
   const [panchayathSearchOpen, setPanchayathSearchOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState<AgentTask | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleteTask, setDeleteTask] = useState<AgentTask | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load panchayaths
   useEffect(() => {
@@ -205,6 +224,44 @@ export default function AgentTasks() {
     setNewTitle("");
     setNewDescription("");
     setNewPanchayathIds([]);
+    fetchTasks();
+  };
+
+  const handleEditTask = async () => {
+    if (!editTask || !editTitle.trim()) return;
+    setIsEditing(true);
+    const { error } = await supabase
+      .from("pennyekart_agent_tasks")
+      .update({ title: editTitle.trim(), description: editDescription.trim() || null })
+      .eq("id", editTask.id);
+    setIsEditing(false);
+    if (error) {
+      toast.error("Failed to update task");
+      return;
+    }
+    toast.success("Task updated");
+    setEditDialogOpen(false);
+    setEditTask(null);
+    if (selectedTask?.id === editTask.id) {
+      setSelectedTask({ ...selectedTask, title: editTitle.trim(), description: editDescription.trim() || null });
+    }
+    fetchTasks();
+  };
+
+  const handleDeleteTask = async () => {
+    if (!deleteTask) return;
+    setIsDeleting(true);
+    // Delete feedback first, then task
+    await supabase.from("pennyekart_agent_task_feedback").delete().eq("task_id", deleteTask.id);
+    const { error } = await supabase.from("pennyekart_agent_tasks").delete().eq("id", deleteTask.id);
+    setIsDeleting(false);
+    if (error) {
+      toast.error("Failed to delete task");
+      return;
+    }
+    toast.success("Task deleted");
+    if (selectedTask?.id === deleteTask.id) setSelectedTask(null);
+    setDeleteTask(null);
     fetchTasks();
   };
 
@@ -329,7 +386,40 @@ export default function AgentTasks() {
                       )}
                       onClick={() => setSelectedTask(task)}
                     >
-                      <div className="font-medium text-sm">{task.title}</div>
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="font-medium text-sm flex-1 min-w-0">{task.title}</div>
+                        {isSuperAdmin && (
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditTask(task);
+                                setEditTitle(task.title);
+                                setEditDescription(task.description || "");
+                                setEditDialogOpen(true);
+                              }}
+                              title="Edit task"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTask(task);
+                              }}
+                              title="Delete task"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                       {task.description && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {task.description}
@@ -551,6 +641,68 @@ export default function AgentTasks() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Title *</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Task title"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Task description (optional)"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditTask} disabled={isEditing || !editTitle.trim()}>
+              {isEditing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Task Confirmation */}
+      <AlertDialog open={!!deleteTask} onOpenChange={(open) => !open && setDeleteTask(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{deleteTask?.title}" and all its feedback. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTask}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
