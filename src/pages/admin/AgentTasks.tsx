@@ -92,7 +92,8 @@ export default function AgentTasks() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newPanchayathId, setNewPanchayathId] = useState("");
+  const [newPanchayathIds, setNewPanchayathIds] = useState<string[]>([]);
+  const [panchayathSearchOpen, setPanchayathSearchOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showPendingOnly, setShowPendingOnly] = useState(false);
 
