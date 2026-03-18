@@ -183,27 +183,28 @@ export default function AgentTasks() {
   }
 
   const handleCreateTask = async () => {
-    if (!newTitle.trim() || !newPanchayathId) {
-      toast.error("Title and Panchayath are required");
+    if (!newTitle.trim() || newPanchayathIds.length === 0) {
+      toast.error("Title and at least one Panchayath are required");
       return;
     }
     setIsCreating(true);
-    const { error } = await supabase.from("pennyekart_agent_tasks").insert({
+    const rows = newPanchayathIds.map((pid) => ({
       title: newTitle.trim(),
       description: newDescription.trim() || null,
-      panchayath_id: newPanchayathId,
+      panchayath_id: pid,
       created_by: adminData?.id || null,
-    });
+    }));
+    const { error } = await supabase.from("pennyekart_agent_tasks").insert(rows);
     setIsCreating(false);
     if (error) {
       toast.error("Failed to create task");
       return;
     }
-    toast.success("Task created");
+    toast.success(`Task created for ${newPanchayathIds.length} panchayath(s)`);
     setCreateDialogOpen(false);
     setNewTitle("");
     setNewDescription("");
-    setNewPanchayathId("");
+    setNewPanchayathIds([]);
     fetchTasks();
   };
 
