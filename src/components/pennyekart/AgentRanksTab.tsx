@@ -111,6 +111,17 @@ export function AgentRanksTab({ agents, allAgents, panchayaths, onSelectAgent }:
             ))}
           </SelectContent>
         </Select>
+        <Select value={panchayathFilter} onValueChange={setPanchayathFilter}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Panchayath" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Panchayaths</SelectItem>
+            {panchayaths.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={rankFilter} onValueChange={(v) => setRankFilter(v as RankFilter)}>
           <SelectTrigger className="w-[140px] h-9">
             <SelectValue placeholder="Rank" />
