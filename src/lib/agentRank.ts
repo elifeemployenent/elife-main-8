@@ -79,7 +79,7 @@ export function calculateAgentRank(
         isFull: cur >= req,
         current: cur,
         required: req,
-        label: `${cur}/${req} Full PROs`,
+        label: `${cur}/${req} Full PROs${pros.length > cur ? ` (${pros.length} total)` : ""}`,
         percentage: Math.min(100, Math.round((cur / req) * 100)),
       };
     }
