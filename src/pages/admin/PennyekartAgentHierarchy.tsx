@@ -332,89 +332,115 @@ export default function PennyekartAgentHierarchy() {
           </CardContent>
         </Card>
 
-        {/* S-Code Leaders - Profile Cards */}
-        {(() => {
-          const scodeAgents = agents.filter(a => a.role === "scode");
-          if (scodeAgents.length === 0) return null;
-          return (
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-sm sm:text-base font-semibold mb-3 flex items-center gap-2">
-                <Users className="h-4 w-4 text-rose-500" />
-                S-Code Leaders
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {scodeAgents.map(agent => (
-                  <AgentProfileCard
-                    key={agent.id}
-                    agent={agent}
+        {/* Tabs: Hierarchy & Ranks */}
+        <Tabs defaultValue="hierarchy" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="hierarchy" className="gap-1.5">
+              <Users className="h-4 w-4" />
+              Hierarchy
+            </TabsTrigger>
+            <TabsTrigger value="ranks" className="gap-1.5">
+              <Trophy className="h-4 w-4" />
+              Agent Ranks
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
+            {/* S-Code Leaders - Profile Cards */}
+            {(() => {
+              const scodeAgents = agents.filter(a => a.role === "scode");
+              if (scodeAgents.length === 0) return null;
+              return (
+                <div>
+                  <h2 className="text-sm sm:text-base font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-rose-500" />
+                    S-Code Leaders
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {scodeAgents.map(agent => (
+                      <AgentProfileCard
+                        key={agent.id}
+                        agent={agent}
+                        allAgents={agents}
+                        panchayaths={panchayaths}
+                        onClick={() => setSelectedAgent(agent)}
+                        isSelected={selectedAgent?.id === agent.id}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* Hierarchy Tree */}
+              <Card className="lg:col-span-2 overflow-hidden">
+                <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    Agent Hierarchy
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Click on an agent to view details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-2 sm:px-6 pb-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-12 text-destructive">
+                      <p className="text-sm">Error: {error}</p>
+                      <Button variant="outline" size="sm" className="mt-4" onClick={refetch}>
+                        Retry
+                      </Button>
+                    </div>
+                  ) : (
+                    <AgentHierarchyTree
+                      agents={agents}
+                      onSelectAgent={setSelectedAgent}
+                      selectedAgentId={selectedAgent?.id}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Details Panel */}
+              <div className="lg:col-span-1">
+                {selectedAgent ? (
+                  <AgentDetailsPanel
+                    agent={selectedAgent}
                     allAgents={agents}
                     panchayaths={panchayaths}
-                    onClick={() => setSelectedAgent(agent)}
-                    isSelected={selectedAgent?.id === agent.id}
+                    onEdit={() => handleEditAgent(selectedAgent)}
+                    onDelete={() => handleDeleteAgent(selectedAgent)}
+                    onAddChild={() => handleAddChildAgent(selectedAgent)}
+                    onClose={() => setSelectedAgent(null)}
                   />
-                ))}
+                ) : (
+                  <Card className="h-full min-h-[200px] sm:min-h-[300px] flex items-center justify-center">
+                    <div className="text-center text-muted-foreground p-4 sm:p-6">
+                      <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                      <p className="text-sm">Select an agent to view details</p>
+                    </div>
+                  </Card>
+                )}
               </div>
             </div>
-          );
-        })()}
+          </TabsContent>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Hierarchy Tree */}
-          <Card className="lg:col-span-2 overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                Agent Hierarchy
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Click on an agent to view details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-2 sm:px-6 pb-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-12 text-destructive">
-                  <p className="text-sm">Error: {error}</p>
-                  <Button variant="outline" size="sm" className="mt-4" onClick={refetch}>
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                <AgentHierarchyTree
-                  agents={agents}
-                  onSelectAgent={setSelectedAgent}
-                  selectedAgentId={selectedAgent?.id}
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Details Panel */}
-          <div className="lg:col-span-1">
-            {selectedAgent ? (
-              <AgentDetailsPanel
-                agent={selectedAgent}
-                allAgents={agents}
-                panchayaths={panchayaths}
-                onEdit={() => handleEditAgent(selectedAgent)}
-                onDelete={() => handleDeleteAgent(selectedAgent)}
-                onAddChild={() => handleAddChildAgent(selectedAgent)}
-                onClose={() => setSelectedAgent(null)}
-              />
+          <TabsContent value="ranks">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
             ) : (
-              <Card className="h-full min-h-[200px] sm:min-h-[300px] flex items-center justify-center">
-                <div className="text-center text-muted-foreground p-4 sm:p-6">
-                  <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                  <p className="text-sm">Select an agent to view details</p>
-                </div>
-              </Card>
+              <AgentRanksTab agents={agents} onSelectAgent={setSelectedAgent} />
             )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Form Dialog */}
         <BulkAgentFormDialog
