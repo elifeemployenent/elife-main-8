@@ -251,4 +251,3 @@ function calculateTotalCustomers(agent: PennyekartAgent, allAgents: PennyekartAg
   const children = allAgents.filter(a => a.parent_agent_id === agent.id);
   return children.reduce((total, child) => total + calculateTotalCustomers(child, allAgents, visited), 0);
 }
-}
