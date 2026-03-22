@@ -223,6 +223,23 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
   );
 }
 
+function RankBadge({ rank }: { rank: AgentRankInfo }) {
+  if (rank.isFull) {
+    return (
+      <Badge className="text-[10px] sm:text-xs px-1.5 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 gap-0.5">
+        <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+        Full
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0 gap-0.5 text-muted-foreground">
+      <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+      {rank.percentage}%
+    </Badge>
+  );
+}
+
 function calculateTotalCustomers(agent: PennyekartAgent, allAgents: PennyekartAgent[], visited: Set<string> = new Set()): number {
   if (visited.has(agent.id)) return 0;
   visited.add(agent.id);
@@ -233,4 +250,5 @@ function calculateTotalCustomers(agent: PennyekartAgent, allAgents: PennyekartAg
   
   const children = allAgents.filter(a => a.parent_agent_id === agent.id);
   return children.reduce((total, child) => total + calculateTotalCustomers(child, allAgents, visited), 0);
+}
 }
