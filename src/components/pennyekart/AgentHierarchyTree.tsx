@@ -125,6 +125,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
   // Calculate total customer count for this subtree
   const totalCustomers = calculateTotalCustomers(agent, allAgents);
   
+  // Calculate rank
+  const rank = useMemo(() => calculateAgentRank(agent, allAgents), [agent, allAgents]);
+  
   return (
     <div className="ml-2 sm:ml-4">
       <div
@@ -160,6 +163,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
             <Badge className={cn("text-[10px] sm:text-xs px-1.5 py-0", ROLE_COLORS[agent.role])}>
               {ROLE_LABELS[agent.role]}
             </Badge>
+            {agent.role !== "scode" && (
+              <RankBadge rank={rank} />
+            )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground mt-0.5">
             <span className="flex items-center gap-0.5 sm:gap-1">
@@ -172,6 +178,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
                 <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 W{agent.ward}
               </span>
+            )}
+            {agent.role !== "scode" && (
+              <span className="text-[10px] opacity-70">{rank.label}</span>
             )}
           </div>
         </div>
