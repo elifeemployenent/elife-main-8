@@ -24,20 +24,22 @@ interface AgentRanksTabProps {
 
 type RankFilter = "all" | "full" | "incomplete";
 
-export function AgentRanksTab({ agents, onSelectAgent }: AgentRanksTabProps) {
+export function AgentRanksTab({ agents, allAgents, panchayaths, onSelectAgent }: AgentRanksTabProps) {
   const [roleFilter, setRoleFilter] = useState<AgentRole | "all">("all");
   const [rankFilter, setRankFilter] = useState<RankFilter>("all");
+  const [panchayathFilter, setPanchayathFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
+  // Use allAgents for rank calculation so descendants across panchayaths are included
   const rankedAgents = useMemo(() => {
     return agents
       .filter(a => a.role !== "scode")
       .map(agent => ({
         agent,
-        rank: calculateAgentRank(agent, agents),
+        rank: calculateAgentRank(agent, allAgents),
       }))
       .sort((a, b) => a.rank.percentage - b.rank.percentage);
-  }, [agents]);
+  }, [agents, allAgents]);
 
   const filtered = useMemo(() => {
     return rankedAgents.filter(({ agent, rank }) => {
