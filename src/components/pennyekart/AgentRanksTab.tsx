@@ -10,40 +10,50 @@ import { Trophy, Star, AlertTriangle, Search, Users, Phone, MapPin } from "lucid
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
+interface Panchayath {
+  id: string;
+  name: string;
+}
+
 interface AgentRanksTabProps {
   agents: PennyekartAgent[];
+  allAgents: PennyekartAgent[];
+  panchayaths: Panchayath[];
   onSelectAgent: (agent: PennyekartAgent) => void;
 }
 
 type RankFilter = "all" | "full" | "incomplete";
 
-export function AgentRanksTab({ agents, onSelectAgent }: AgentRanksTabProps) {
+export function AgentRanksTab({ agents, allAgents, panchayaths, onSelectAgent }: AgentRanksTabProps) {
   const [roleFilter, setRoleFilter] = useState<AgentRole | "all">("all");
   const [rankFilter, setRankFilter] = useState<RankFilter>("all");
+  const [panchayathFilter, setPanchayathFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
+  // Use allAgents for rank calculation so descendants across panchayaths are included
   const rankedAgents = useMemo(() => {
     return agents
       .filter(a => a.role !== "scode")
       .map(agent => ({
         agent,
-        rank: calculateAgentRank(agent, agents),
+        rank: calculateAgentRank(agent, allAgents),
       }))
       .sort((a, b) => a.rank.percentage - b.rank.percentage);
-  }, [agents]);
+  }, [agents, allAgents]);
 
   const filtered = useMemo(() => {
     return rankedAgents.filter(({ agent, rank }) => {
       if (roleFilter !== "all" && agent.role !== roleFilter) return false;
       if (rankFilter === "full" && !rank.isFull) return false;
       if (rankFilter === "incomplete" && rank.isFull) return false;
+      if (panchayathFilter !== "all" && agent.panchayath_id !== panchayathFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!agent.name.toLowerCase().includes(q) && !agent.mobile.includes(q)) return false;
       }
       return true;
     });
-  }, [rankedAgents, roleFilter, rankFilter, search]);
+  }, [rankedAgents, roleFilter, rankFilter, panchayathFilter, search]);
 
   // Summary stats
   const summary = useMemo(() => {
@@ -98,6 +108,17 @@ export function AgentRanksTab({ agents, onSelectAgent }: AgentRanksTabProps) {
             <SelectItem value="all">All Roles</SelectItem>
             {(["pro", "group_leader", "coordinator", "team_leader"] as AgentRole[]).map(r => (
               <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={panchayathFilter} onValueChange={setPanchayathFilter}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Panchayath" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Panchayaths</SelectItem>
+            {panchayaths.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

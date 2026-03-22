@@ -437,7 +437,7 @@ export default function PennyekartAgentHierarchy() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <AgentRanksTab agents={agents} onSelectAgent={setSelectedAgent} />
+              <AgentRanksTab agents={agents} allAgents={agents} panchayaths={panchayaths} onSelectAgent={setSelectedAgent} />
             )}
           </TabsContent>
         </Tabs>

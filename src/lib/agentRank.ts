@@ -9,13 +9,35 @@ export interface AgentRankInfo {
 }
 
 /**
+ * Find all descendants of an agent recursively.
+ */
+function getAllDescendants(
+  agent: PennyekartAgent,
+  allAgents: PennyekartAgent[],
+  visited: Set<string> = new Set()
+): PennyekartAgent[] {
+  if (visited.has(agent.id)) return [];
+  visited.add(agent.id);
+
+  const directChildren = allAgents.filter(
+    (a) => a.parent_agent_id === agent.id && a.id !== agent.id && !visited.has(a.id)
+  );
+
+  const result: PennyekartAgent[] = [...directChildren];
+  for (const child of directChildren) {
+    result.push(...getAllDescendants(child, allAgents, visited));
+  }
+  return result;
+}
+
+/**
  * Calculate rank fulfillment for an agent based on their downstream team.
  *
  * Rules:
  * - PRO: full rank if customer_count >= 5
- * - Group Leader: full rank if has >= 5 PROs each with >= 5 customers
- * - Coordinator: full rank if has >= 5 full-rank Group Leaders
- * - Team Leader: full rank if has >= 4 full-rank Coordinators
+ * - Group Leader: full rank if has >= 5 PROs (in descendants) each with >= 5 customers
+ * - Coordinator: full rank if has >= 5 full-rank Group Leaders (in descendants)
+ * - Team Leader: full rank if has >= 4 full-rank Coordinators (in descendants)
  */
 export function calculateAgentRank(
   agent: PennyekartAgent,
@@ -27,9 +49,10 @@ export function calculateAgentRank(
   }
   visited.add(agent.id);
 
-  const directChildren = allAgents.filter(
-    (a) => a.parent_agent_id === agent.id && a.id !== agent.id && !visited.has(a.id)
-  );
+  // Get all descendants for non-PRO roles
+  const descendants = agent.role !== "pro"
+    ? getAllDescendants(agent, allAgents, new Set(visited))
+    : [];
 
   switch (agent.role) {
     case "pro": {
@@ -46,8 +69,8 @@ export function calculateAgentRank(
 
     case "group_leader": {
       const req = 5;
-      const fullPros = directChildren.filter((c) => {
-        if (c.role !== "pro") return false;
+      const pros = descendants.filter((c) => c.role === "pro");
+      const fullPros = pros.filter((c) => {
         const rank = calculateAgentRank(c, allAgents, new Set(visited));
         return rank.isFull;
       });
@@ -63,8 +86,8 @@ export function calculateAgentRank(
 
     case "coordinator": {
       const req = 5;
-      const fullGLs = directChildren.filter((c) => {
-        if (c.role !== "group_leader") return false;
+      const gls = descendants.filter((c) => c.role === "group_leader");
+      const fullGLs = gls.filter((c) => {
         const rank = calculateAgentRank(c, allAgents, new Set(visited));
         return rank.isFull;
       });
@@ -80,8 +103,8 @@ export function calculateAgentRank(
 
     case "team_leader": {
       const req = 4;
-      const fullCoords = directChildren.filter((c) => {
-        if (c.role !== "coordinator") return false;
+      const coords = descendants.filter((c) => c.role === "coordinator");
+      const fullCoords = coords.filter((c) => {
         const rank = calculateAgentRank(c, allAgents, new Set(visited));
         return rank.isFull;
       });
