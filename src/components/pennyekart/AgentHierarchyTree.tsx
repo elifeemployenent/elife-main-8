@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2, Star, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PennyekartAgent, ROLE_LABELS, AgentRole } from "@/hooks/usePennyekartAgents";
+import { calculateAgentRank, AgentRankInfo } from "@/lib/agentRank";
 
 interface AgentHierarchyTreeProps {
   agents: PennyekartAgent[];
@@ -124,6 +125,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
   // Calculate total customer count for this subtree
   const totalCustomers = calculateTotalCustomers(agent, allAgents);
   
+  // Calculate rank
+  const rank = useMemo(() => calculateAgentRank(agent, allAgents), [agent, allAgents]);
+  
   return (
     <div className="ml-2 sm:ml-4">
       <div
@@ -159,6 +163,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
             <Badge className={cn("text-[10px] sm:text-xs px-1.5 py-0", ROLE_COLORS[agent.role])}>
               {ROLE_LABELS[agent.role]}
             </Badge>
+            {agent.role !== "scode" && (
+              <RankBadge rank={rank} />
+            )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground mt-0.5">
             <span className="flex items-center gap-0.5 sm:gap-1">
@@ -171,6 +178,9 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
                 <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 W{agent.ward}
               </span>
+            )}
+            {agent.role !== "scode" && (
+              <span className="text-[10px] opacity-70">{rank.label}</span>
             )}
           </div>
         </div>
@@ -210,6 +220,23 @@ function AgentNode({ agent, allAgents, depth, onSelectAgent, selectedAgentId, vi
         </div>
       )}
     </div>
+  );
+}
+
+function RankBadge({ rank }: { rank: AgentRankInfo }) {
+  if (rank.isFull) {
+    return (
+      <Badge className="text-[10px] sm:text-xs px-1.5 py-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 gap-0.5">
+        <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+        Full
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0 gap-0.5 text-muted-foreground">
+      <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+      {rank.percentage}%
+    </Badge>
   );
 }
 
