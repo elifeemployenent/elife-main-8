@@ -10,8 +10,15 @@ import { Trophy, Star, AlertTriangle, Search, Users, Phone, MapPin } from "lucid
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
+interface Panchayath {
+  id: string;
+  name: string;
+}
+
 interface AgentRanksTabProps {
   agents: PennyekartAgent[];
+  allAgents: PennyekartAgent[];
+  panchayaths: Panchayath[];
   onSelectAgent: (agent: PennyekartAgent) => void;
 }
 
