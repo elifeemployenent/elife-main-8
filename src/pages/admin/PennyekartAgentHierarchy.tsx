@@ -34,6 +34,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   usePennyekartAgents, 
