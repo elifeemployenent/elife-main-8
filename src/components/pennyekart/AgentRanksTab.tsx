@@ -46,13 +46,14 @@ export function AgentRanksTab({ agents, allAgents, panchayaths, onSelectAgent }:
       if (roleFilter !== "all" && agent.role !== roleFilter) return false;
       if (rankFilter === "full" && !rank.isFull) return false;
       if (rankFilter === "incomplete" && rank.isFull) return false;
+      if (panchayathFilter !== "all" && agent.panchayath_id !== panchayathFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!agent.name.toLowerCase().includes(q) && !agent.mobile.includes(q)) return false;
       }
       return true;
     });
-  }, [rankedAgents, roleFilter, rankFilter, search]);
+  }, [rankedAgents, roleFilter, rankFilter, panchayathFilter, search]);
 
   // Summary stats
   const summary = useMemo(() => {
