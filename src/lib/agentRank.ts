@@ -50,8 +50,10 @@ export function calculateAgentRank(
   visited.add(agent.id);
 
   // Get all descendants for non-PRO roles
+  // Use a fresh visited set for getAllDescendants (don't include the agent itself,
+  // since getAllDescendants checks visited and would return [] immediately)
   const descendants = agent.role !== "pro"
-    ? getAllDescendants(agent, allAgents, new Set(visited))
+    ? getAllDescendants(agent, allAgents, new Set())
     : [];
 
   switch (agent.role) {
