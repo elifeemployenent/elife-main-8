@@ -1,4 +1,4 @@
-import { PennyekartAgent, AgentRole } from "@/hooks/usePennyekartAgents";
+import { PennyekartAgent, AgentRole, ROLE_LABELS } from "@/hooks/usePennyekartAgents";
 
 export interface AgentRankInfo {
   isFull: boolean;
@@ -6,6 +6,17 @@ export interface AgentRankInfo {
   required: number;
   label: string; // e.g. "3/5 PROs"
   percentage: number; // 0-100
+}
+
+export interface AgentRankDetail {
+  agent: PennyekartAgent;
+  rank: AgentRankInfo;
+}
+
+export interface AgentRankBreakdown {
+  rankInfo: AgentRankInfo;
+  requiredRole: string; // human label of the role needed
+  details: AgentRankDetail[]; // each downstream agent with their rank status
 }
 
 /**
