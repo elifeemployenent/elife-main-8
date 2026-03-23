@@ -153,6 +153,66 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
     fetchParentAgents();
   }, [selectedRole, selectedPanchayath]);
 
+  // Load available wards for coordinators (exclude already allocated wards)
+  useEffect(() => {
+    const fetchAvailableWards = async () => {
+      if (selectedRole !== "coordinator" || !selectedPanchayath) {
+        setAvailableWards([]);
+        return;
+      }
+
+      setIsLoadingWards(true);
+      try {
+        // Get panchayath ward count
+        const { data: panchayathData } = await supabase
+          .from("panchayaths")
+          .select("ward")
+          .eq("id", selectedPanchayath)
+          .single();
+
+        const totalWards = parseInt(panchayathData?.ward || "0", 10);
+        if (totalWards === 0) {
+          setAvailableWards([]);
+          setIsLoadingWards(false);
+          return;
+        }
+
+        // Get wards already allocated to other coordinators in this panchayath
+        let query = supabase
+          .from("pennyekart_agents")
+          .select("ward")
+          .eq("panchayath_id", selectedPanchayath)
+          .eq("role", "coordinator")
+          .eq("is_active", true);
+
+        // If editing, exclude the current agent
+        if (agent?.id) {
+          query = query.neq("id", agent.id);
+        }
+
+        const { data: existingCoordinators } = await query;
+        const allocatedWards = new Set((existingCoordinators || []).map((c: any) => c.ward));
+
+        // Generate available wards (1 to totalWards, minus allocated)
+        const available: string[] = [];
+        for (let i = 1; i <= totalWards; i++) {
+          const wardStr = String(i);
+          if (!allocatedWards.has(wardStr)) {
+            available.push(wardStr);
+          }
+        }
+        setAvailableWards(available);
+      } catch (err) {
+        console.error("Failed to fetch available wards:", err);
+        setAvailableWards([]);
+      } finally {
+        setIsLoadingWards(false);
+      }
+    };
+
+    fetchAvailableWards();
+  }, [selectedRole, selectedPanchayath, agent?.id]);
+
   // Reset form when dialog opens/closes or agent changes
   useEffect(() => {
     if (open && agent) {
