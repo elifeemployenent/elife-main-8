@@ -210,8 +210,32 @@ export function BulkAgentFormDialog({
       if (panchayath?.ward) {
         const wardCount = parseInt(panchayath.ward, 10);
         if (!isNaN(wardCount) && wardCount > 0) {
-          const wards = Array.from({ length: wardCount }, (_, i) => String(i + 1));
-          setWardOptions(wards);
+          // For coordinators, filter out already allocated wards
+          if (selectedSingleRole === "coordinator") {
+            const fetchAllocated = async () => {
+              let query = supabase
+                .from("pennyekart_agents")
+                .select("responsible_wards")
+                .eq("panchayath_id", panchayathId)
+                .eq("role", "coordinator")
+                .eq("is_active", true);
+              if (agent?.id) {
+                query = query.neq("id", agent.id);
+              }
+              const { data: existingCoordinators } = await query;
+              const allocated = new Set<string>();
+              (existingCoordinators || []).forEach((c: any) => {
+                (c.responsible_wards || []).forEach((w: string) => allocated.add(w));
+              });
+              const available = Array.from({ length: wardCount }, (_, i) => String(i + 1))
+                .filter(w => !allocated.has(w));
+              setWardOptions(available);
+            };
+            fetchAllocated();
+          } else {
+            const wards = Array.from({ length: wardCount }, (_, i) => String(i + 1));
+            setWardOptions(wards);
+          }
           return;
         }
       }
@@ -220,7 +244,7 @@ export function BulkAgentFormDialog({
     if (panchayaths.length > 0 && !panchayathId) {
       setWardOptions([]);
     }
-  }, [selectedSinglePanchayath, panchayaths, agent]);
+  }, [selectedSinglePanchayath, panchayaths, agent, selectedSingleRole]);
 
   // Update ward options when panchayath changes (for bulk form)
   useEffect(() => {
@@ -229,14 +253,33 @@ export function BulkAgentFormDialog({
       if (panchayath?.ward) {
         const wardCount = parseInt(panchayath.ward, 10);
         if (!isNaN(wardCount) && wardCount > 0) {
-          const wards = Array.from({ length: wardCount }, (_, i) => String(i + 1));
-          setWardOptions(wards);
+          if (selectedBulkRole === "coordinator") {
+            const fetchAllocated = async () => {
+              const { data: existingCoordinators } = await supabase
+                .from("pennyekart_agents")
+                .select("responsible_wards")
+                .eq("panchayath_id", selectedBulkPanchayath)
+                .eq("role", "coordinator")
+                .eq("is_active", true);
+              const allocated = new Set<string>();
+              (existingCoordinators || []).forEach((c: any) => {
+                (c.responsible_wards || []).forEach((w: string) => allocated.add(w));
+              });
+              const available = Array.from({ length: wardCount }, (_, i) => String(i + 1))
+                .filter(w => !allocated.has(w));
+              setWardOptions(available);
+            };
+            fetchAllocated();
+          } else {
+            const wards = Array.from({ length: wardCount }, (_, i) => String(i + 1));
+            setWardOptions(wards);
+          }
           return;
         }
       }
     }
     setWardOptions([]);
-  }, [selectedBulkPanchayath, panchayaths]);
+  }, [selectedBulkPanchayath, panchayaths, selectedBulkRole]);
 
   // Load potential parent agents (single form) - Team Leaders across all responsible panchayaths
   useEffect(() => {
