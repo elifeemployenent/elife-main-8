@@ -87,6 +87,8 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
   const [potentialParents, setPotentialParents] = useState<PennyekartAgent[]>([]);
   const [isLoadingPanchayaths, setIsLoadingPanchayaths] = useState(false);
   const [panchayathPopoverOpen, setPanchayathPopoverOpen] = useState(false);
+  const [availableWards, setAvailableWards] = useState<string[]>([]);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
   const { createAgent, updateAgent, isSubmitting } = useAgentMutations();
 
   const isEditing = !!agent;
