@@ -402,19 +402,54 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="ward"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Ward</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ward name/number" className="h-10" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {selectedRole === "coordinator" ? (
+                  <FormField
+                    control={form.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Ward</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder={
+                                !selectedPanchayath
+                                  ? "Select panchayath first"
+                                  : isLoadingWards
+                                    ? "Loading..."
+                                    : availableWards.length === 0
+                                      ? "No wards available"
+                                      : "Select ward"
+                              } />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableWards.map((w) => (
+                              <SelectItem key={w} value={w}>
+                                Ward {w}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Ward</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ward name/number" className="h-10" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {needsParent && (
                   <FormField
