@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Panchayath {
@@ -162,21 +163,14 @@ export function FixedRegistrationFields({
             </p>
           </div>
         ) : (
-          <Select
+          <SearchableSelect
+            options={panchayaths.map((p) => ({ value: p.id, label: p.name }))}
             value={values.panchayath_id}
             onValueChange={handlePanchayathChange}
-          >
-            <SelectTrigger className={errors?.panchayath_id ? "border-destructive" : ""}>
-              <SelectValue placeholder="Select panchayath" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="max-h-60">
-              {panchayaths.map((panchayath) => (
-                <SelectItem key={panchayath.id} value={panchayath.id}>
-                  {panchayath.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select panchayath"
+            searchPlaceholder="Search panchayath..."
+            triggerClassName={errors?.panchayath_id ? "border-destructive" : ""}
+          />
         )}
         {errors?.panchayath_id && (
           <p className="text-sm text-destructive">{errors.panchayath_id}</p>

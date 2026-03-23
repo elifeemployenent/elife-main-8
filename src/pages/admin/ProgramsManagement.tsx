@@ -28,6 +28,7 @@ import { ProgramCard } from "@/components/programs/ProgramCard";
 import { Loader2, Plus, ArrowLeft, AlertCircle, Calendar, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Division {
   id: string;
@@ -282,18 +283,13 @@ export default function ProgramsManagement() {
                 {!allPanchayaths && (
                   <div className="space-y-2">
                     <Label htmlFor="panchayath">Panchayath *</Label>
-                    <Select value={selectedPanchayath} onValueChange={setSelectedPanchayath}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a panchayath" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {panchayaths.map((panchayath) => (
-                          <SelectItem key={panchayath.id} value={panchayath.id}>
-                            {panchayath.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={panchayaths.map((p) => ({ value: p.id, label: p.name }))}
+                      value={selectedPanchayath}
+                      onValueChange={setSelectedPanchayath}
+                      placeholder="Select a panchayath"
+                      searchPlaceholder="Search panchayath..."
+                    />
                   </div>
                 )}
 

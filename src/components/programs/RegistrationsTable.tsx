@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface RegistrationsTableProps {
   programName: string;
@@ -315,17 +316,14 @@ export function RegistrationsTable({
           {registrations.length > 0 && (
             <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-lg border bg-muted/30">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={panchayathFilter} onValueChange={setPanchayathFilter}>
-                <SelectTrigger className="w-40 h-8 text-xs">
-                  <SelectValue placeholder="Panchayath" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Panchayaths</SelectItem>
-                  {panchayaths.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={[{ value: "all", label: "All Panchayaths" }, ...panchayaths.map(p => ({ value: p, label: p }))]}
+                value={panchayathFilter}
+                onValueChange={v => setPanchayathFilter(v || "all")}
+                placeholder="Panchayath"
+                searchPlaceholder="Search panchayath..."
+                triggerClassName="w-40 h-8 text-xs"
+              />
               {verificationEnabled && (
                 <>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>

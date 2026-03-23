@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { 
   Users, 
   Plus, 
@@ -272,21 +273,14 @@ export default function PennyekartAgentHierarchy() {
                 />
               </div>
               
-              <Select
+              <SearchableSelect
+                options={[{ value: "all", label: "All Panchayaths" }, ...panchayaths.map(p => ({ value: p.id, label: p.name }))]}
                 value={filters.panchayath_id || "all"}
                 onValueChange={(v) => handleFilterChange("panchayath_id", v)}
-              >
-                <SelectTrigger className="h-9">
-                  <Building2 className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
-                  <SelectValue placeholder="Panchayath" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Panchayaths</SelectItem>
-                  {panchayaths.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Panchayath"
+                searchPlaceholder="Search panchayath..."
+                triggerClassName="h-9"
+              />
 
               <Select
                 value={filters.ward || "all"}

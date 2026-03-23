@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, ArrowLeft, AlertCircle, MapPin, Building } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Panchayath {
@@ -601,23 +602,13 @@ export default function LocationsManagement() {
 
                     <div className="space-y-2">
                       <Label htmlFor="selectPanchayath">Panchayath</Label>
-                      <Select
+                      <SearchableSelect
+                        options={panchayaths.filter((p) => p.is_active).map((p) => ({ value: p.id, label: p.name }))}
                         value={selectedPanchayath}
                         onValueChange={setSelectedPanchayath}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a panchayath" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {panchayaths
-                            .filter((p) => p.is_active)
-                            .map((panchayath) => (
-                              <SelectItem key={panchayath.id} value={panchayath.id}>
-                                {panchayath.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder="Select a panchayath"
+                        searchPlaceholder="Search panchayath..."
+                      />
                     </div>
 
                     <DialogFooter>

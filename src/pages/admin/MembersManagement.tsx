@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -309,22 +310,13 @@ export default function MembersManagement() {
 
                 <div className="space-y-2">
                   <Label htmlFor="panchayath">Panchayath *</Label>
-                  <Select
+                  <SearchableSelect
+                    options={panchayaths.map((p) => ({ value: p.id, label: p.name }))}
                     value={selectedPanchayath}
                     onValueChange={setSelectedPanchayath}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a panchayath" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {panchayaths.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select a panchayath"
+                    searchPlaceholder="Search panchayath..."
+                  />
                 </div>
 
                 <div className="space-y-2">

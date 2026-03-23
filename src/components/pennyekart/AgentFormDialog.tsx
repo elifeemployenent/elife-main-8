@@ -30,6 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -385,20 +386,14 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">Panchayath</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder={isLoadingPanchayaths ? "Loading..." : "Select"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {panchayaths.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          options={panchayaths.map((p) => ({ value: p.id, label: p.name }))}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder={isLoadingPanchayaths ? "Loading..." : "Select"}
+                          searchPlaceholder="Search panchayath..."
+                          triggerClassName="h-10"
+                        />
                         <FormMessage />
                       </FormItem>
                     )}

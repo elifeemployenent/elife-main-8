@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Order {
   id: string;
@@ -413,13 +414,14 @@ ${filteredOrders.map((o, i) => `<tr><td>${i + 1}</td><td>${o.id}</td><td>${o.sou
               {panchayaths.length > 0 && (
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground">Panchayath</label>
-                  <Select value={panchayathFilter} onValueChange={v => { setPanchayathFilter(v); setWardFilter("all"); }}>
-                    <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Panchayaths</SelectItem>
-                      {panchayaths.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={[{ value: "all", label: "All Panchayaths" }, ...panchayaths.map(p => ({ value: p, label: p }))]}
+                    value={panchayathFilter}
+                    onValueChange={v => { setPanchayathFilter(v || "all"); setWardFilter("all"); }}
+                    placeholder="All Panchayaths"
+                    searchPlaceholder="Search panchayath..."
+                    triggerClassName="w-[160px] h-9"
+                  />
                 </div>
               )}
               {wards.length > 0 && (
