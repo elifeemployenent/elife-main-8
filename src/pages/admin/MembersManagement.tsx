@@ -309,22 +309,13 @@ export default function MembersManagement() {
 
                 <div className="space-y-2">
                   <Label htmlFor="panchayath">Panchayath *</Label>
-                  <Select
+                  <SearchableSelect
+                    options={panchayaths.map((p) => ({ value: p.id, label: p.name }))}
                     value={selectedPanchayath}
                     onValueChange={setSelectedPanchayath}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a panchayath" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {panchayaths.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select a panchayath"
+                    searchPlaceholder="Search panchayath..."
+                  />
                 </div>
 
                 <div className="space-y-2">

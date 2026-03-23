@@ -167,15 +167,14 @@ export function AgentRanksTab({ agents, allAgents, panchayaths, onSelectAgent }:
             ))}
           </SelectContent>
         </Select>
-        <Select value={panchayathFilter} onValueChange={setPanchayathFilter}>
-          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Panchayath" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Panchayaths</SelectItem>
-            {panchayaths.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={[{ value: "all", label: "All Panchayaths" }, ...panchayaths.map(p => ({ value: p.id, label: p.name }))]}
+          value={panchayathFilter}
+          onValueChange={v => setPanchayathFilter(v || "all")}
+          placeholder="Panchayath"
+          searchPlaceholder="Search panchayath..."
+          triggerClassName="w-[160px] h-9"
+        />
         <Select value={rankFilter} onValueChange={(v) => setRankFilter(v as RankFilter)}>
           <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Rank" /></SelectTrigger>
           <SelectContent>

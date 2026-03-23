@@ -471,15 +471,14 @@ export default function Payouts() {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Panchayath</label>
-                    <Select value={panchayathFilter} onValueChange={setPanchayathFilter}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Panchayaths</SelectItem>
-                        {panchayathOptions.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={[{ value: "all", label: "All Panchayaths" }, ...panchayathOptions.map(p => ({ value: p, label: p }))]}
+                      value={panchayathFilter}
+                      onValueChange={v => setPanchayathFilter(v || "all")}
+                      placeholder="All Panchayaths"
+                      searchPlaceholder="Search panchayath..."
+                      triggerClassName="w-40"
+                    />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Role</label>
