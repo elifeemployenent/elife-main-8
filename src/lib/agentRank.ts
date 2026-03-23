@@ -136,3 +136,60 @@ export function calculateAgentRank(
       return { isFull: true, current: 0, required: 0, label: "S-Code", percentage: 100 };
   }
 }
+
+/**
+ * Get a detailed breakdown of an agent's rank fulfillment,
+ * showing each downstream agent and their individual status.
+ */
+export function getAgentRankBreakdown(
+  agent: PennyekartAgent,
+  allAgents: PennyekartAgent[]
+): AgentRankBreakdown {
+  const rankInfo = calculateAgentRank(agent, allAgents);
+  const descendants = getAllDescendants(agent, allAgents, new Set());
+
+  switch (agent.role) {
+    case "pro": {
+      return {
+        rankInfo,
+        requiredRole: "Customers",
+        details: [], // PROs don't have sub-agents to show
+      };
+    }
+    case "group_leader": {
+      const pros = descendants.filter(a => a.role === "pro");
+      return {
+        rankInfo,
+        requiredRole: ROLE_LABELS.pro,
+        details: pros.map(a => ({
+          agent: a,
+          rank: calculateAgentRank(a, allAgents),
+        })).sort((a, b) => (a.rank.isFull === b.rank.isFull ? 0 : a.rank.isFull ? 1 : -1)),
+      };
+    }
+    case "coordinator": {
+      const gls = descendants.filter(a => a.role === "group_leader");
+      return {
+        rankInfo,
+        requiredRole: ROLE_LABELS.group_leader,
+        details: gls.map(a => ({
+          agent: a,
+          rank: calculateAgentRank(a, allAgents),
+        })).sort((a, b) => (a.rank.isFull === b.rank.isFull ? 0 : a.rank.isFull ? 1 : -1)),
+      };
+    }
+    case "team_leader": {
+      const coords = descendants.filter(a => a.role === "coordinator");
+      return {
+        rankInfo,
+        requiredRole: ROLE_LABELS.coordinator,
+        details: coords.map(a => ({
+          agent: a,
+          rank: calculateAgentRank(a, allAgents),
+        })).sort((a, b) => (a.rank.isFull === b.rank.isFull ? 0 : a.rank.isFull ? 1 : -1)),
+      };
+    }
+    default:
+      return { rankInfo, requiredRole: "", details: [] };
+  }
+}
