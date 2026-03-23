@@ -177,10 +177,10 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
           return;
         }
 
-        // Get wards already allocated to other coordinators in this panchayath
+        // Get wards already allocated to other coordinators in this panchayath via responsible_wards
         let query = supabase
           .from("pennyekart_agents")
-          .select("ward")
+          .select("responsible_wards")
           .eq("panchayath_id", selectedPanchayath)
           .eq("role", "coordinator")
           .eq("is_active", true);
@@ -191,7 +191,10 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
         }
 
         const { data: existingCoordinators } = await query;
-        const allocatedWards = new Set((existingCoordinators || []).map((c: any) => c.ward));
+        const allocatedWards = new Set<string>();
+        (existingCoordinators || []).forEach((c: any) => {
+          (c.responsible_wards || []).forEach((w: string) => allocatedWards.add(w));
+        });
 
         // Generate available wards (1 to totalWards, minus allocated)
         const available: string[] = [];
