@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { ROLE_LABELS, ROLE_HIERARCHY, type AgentRole } from "@/hooks/usePennyekartAgents";
 import { AgentWalletsTab } from "@/components/payouts/AgentWalletsTab";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface CommissionRate {
   id: string;

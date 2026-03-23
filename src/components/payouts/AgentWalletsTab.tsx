@@ -18,6 +18,7 @@ import {
 import { Loader2, Wallet, Send, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { ROLE_LABELS, ROLE_HIERARCHY, type AgentRole } from "@/hooks/usePennyekartAgents";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface PayoutRow {
   agent_id: string;

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Order {
   id: string;
