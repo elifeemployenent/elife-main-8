@@ -87,6 +87,8 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
   const [potentialParents, setPotentialParents] = useState<PennyekartAgent[]>([]);
   const [isLoadingPanchayaths, setIsLoadingPanchayaths] = useState(false);
   const [panchayathPopoverOpen, setPanchayathPopoverOpen] = useState(false);
+  const [availableWards, setAvailableWards] = useState<string[]>([]);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
   const { createAgent, updateAgent, isSubmitting } = useAgentMutations();
 
   const isEditing = !!agent;
@@ -150,6 +152,66 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
 
     fetchParentAgents();
   }, [selectedRole, selectedPanchayath]);
+
+  // Load available wards for coordinators (exclude already allocated wards)
+  useEffect(() => {
+    const fetchAvailableWards = async () => {
+      if (selectedRole !== "coordinator" || !selectedPanchayath) {
+        setAvailableWards([]);
+        return;
+      }
+
+      setIsLoadingWards(true);
+      try {
+        // Get panchayath ward count
+        const { data: panchayathData } = await supabase
+          .from("panchayaths")
+          .select("ward")
+          .eq("id", selectedPanchayath)
+          .single();
+
+        const totalWards = parseInt(panchayathData?.ward || "0", 10);
+        if (totalWards === 0) {
+          setAvailableWards([]);
+          setIsLoadingWards(false);
+          return;
+        }
+
+        // Get wards already allocated to other coordinators in this panchayath
+        let query = supabase
+          .from("pennyekart_agents")
+          .select("ward")
+          .eq("panchayath_id", selectedPanchayath)
+          .eq("role", "coordinator")
+          .eq("is_active", true);
+
+        // If editing, exclude the current agent
+        if (agent?.id) {
+          query = query.neq("id", agent.id);
+        }
+
+        const { data: existingCoordinators } = await query;
+        const allocatedWards = new Set((existingCoordinators || []).map((c: any) => c.ward));
+
+        // Generate available wards (1 to totalWards, minus allocated)
+        const available: string[] = [];
+        for (let i = 1; i <= totalWards; i++) {
+          const wardStr = String(i);
+          if (!allocatedWards.has(wardStr)) {
+            available.push(wardStr);
+          }
+        }
+        setAvailableWards(available);
+      } catch (err) {
+        console.error("Failed to fetch available wards:", err);
+        setAvailableWards([]);
+      } finally {
+        setIsLoadingWards(false);
+      }
+    };
+
+    fetchAvailableWards();
+  }, [selectedRole, selectedPanchayath, agent?.id]);
 
   // Reset form when dialog opens/closes or agent changes
   useEffect(() => {
@@ -340,19 +402,54 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="ward"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Ward</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ward name/number" className="h-10" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {selectedRole === "coordinator" ? (
+                  <FormField
+                    control={form.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Ward</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder={
+                                !selectedPanchayath
+                                  ? "Select panchayath first"
+                                  : isLoadingWards
+                                    ? "Loading..."
+                                    : availableWards.length === 0
+                                      ? "No wards available"
+                                      : "Select ward"
+                              } />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableWards.map((w) => (
+                              <SelectItem key={w} value={w}>
+                                Ward {w}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Ward</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ward name/number" className="h-10" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {needsParent && (
                   <FormField
