@@ -28,6 +28,7 @@ import { ProgramCard } from "@/components/programs/ProgramCard";
 import { Loader2, Plus, ArrowLeft, AlertCircle, Calendar, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Division {
   id: string;

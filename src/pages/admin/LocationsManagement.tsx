@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, ArrowLeft, AlertCircle, MapPin, Building } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Panchayath {

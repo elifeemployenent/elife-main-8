@@ -33,6 +33,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Plus, ArrowLeft, AlertCircle, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Cluster {
   id: string;
