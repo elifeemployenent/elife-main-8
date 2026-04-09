@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.admin-cash-collections]
 verify_jwt = false
+
+[functions.whatsapp-worklog]
+verify_jwt = false
