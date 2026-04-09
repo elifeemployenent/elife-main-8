@@ -8,18 +8,18 @@ const corsHeaders = {
 
 const HELP_TEXT = `📋 *PennyeKart Agent Commands*
 
-📝 *report* <your work details>
+1️⃣ <your work details>
   Submit your daily work log.
-  Example: _report Visited 5 shops in Ward 3, collected 2 orders_
+  Example: _1 Visited 5 shops in Ward 3, collected 2 orders_
 
-📊 *status*
+2️⃣
   View today's work log summary.
 
-❓ *help*
+3️⃣
   Show this help message.
 
 💡 *Tips:*
-• Send _report_ followed by your work to log it.
+• Send *1* followed by your work to log it.
 • You can send multiple reports in a day — they will be appended.
 • Your work logs are tracked daily by your team leader.`;
 
@@ -42,12 +42,12 @@ Deno.serve(async (req) => {
 
     const phoneRaw = from.replace("whatsapp:", "").trim();
     const last10 = phoneRaw.replace(/\D/g, "").slice(-10);
-    const command = body.toLowerCase();
+    const command = body.trim();
 
     console.log(`WhatsApp from ${phoneRaw}: ${body.substring(0, 100)}`);
 
     // Handle help before agent lookup
-    if (command === "help" || command === "hi" || command === "hello") {
+    if (command === "3" || command.toLowerCase() === "help" || command.toLowerCase() === "hi" || command.toLowerCase() === "hello") {
       return new Response(
         `<Response><Message>${HELP_TEXT}</Message></Response>`,
         { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
@@ -78,15 +78,15 @@ Deno.serve(async (req) => {
 
     if (!agent) {
       return new Response(
-        `<Response><Message>❌ Your number is not registered as an agent. Please contact your team leader.\n\nType *help* for available commands.</Message></Response>`,
+        `<Response><Message>❌ Your number is not registered as an agent. Please contact your team leader.\n\nType *3* for help.</Message></Response>`,
         { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
       );
     }
 
     const today = new Date().toISOString().split("T")[0];
 
-    // --- COMMAND: status ---
-    if (command === "status") {
+    // --- COMMAND: 2 = status ---
+    if (command === "2" || command.toLowerCase() === "status") {
       const { data: todayLog } = await supabase
         .from("agent_work_logs")
         .select("work_details, created_at, updated_at")
@@ -101,20 +101,20 @@ Deno.serve(async (req) => {
         );
       } else {
         return new Response(
-          `<Response><Message>📊 No work log submitted yet today, ${agent.name}.\n\nUse *report* <details> to submit your work.</Message></Response>`,
+          `<Response><Message>📊 No work log submitted yet today, ${agent.name}.\n\nSend *1* <details> to submit your work.</Message></Response>`,
           { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
         );
       }
     }
 
-    // --- COMMAND: report ---
-    const reportMatch = body.match(/^report\s+(.+)/is);
+    // --- COMMAND: 1 = report ---
+    const reportMatch = body.match(/^1\s+(.+)/is);
     if (reportMatch) {
       const workDetails = reportMatch[1].trim();
 
       if (!workDetails) {
         return new Response(
-          `<Response><Message>⚠️ Please include your work details after *report*.\n\nExample: _report Visited 5 shops, collected 3 orders_</Message></Response>`,
+          `<Response><Message>⚠️ Please include your work details after *1*.\n\nExample: _1 Visited 5 shops, collected 3 orders_</Message></Response>`,
           { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
         );
       }
@@ -169,13 +169,13 @@ Deno.serve(async (req) => {
 
     // --- UNRECOGNIZED COMMAND ---
     return new Response(
-      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Available commands:*\n📝 *report* <work details> — Submit work log\n📊 *status* — View today's log\n❓ *help* — Show all commands\n\nExample: _report Visited 5 shops today_</Message></Response>`,
+      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n\nExample: _1 Visited 5 shops today_</Message></Response>`,
       { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
     );
   } catch (err) {
     console.error("Webhook error:", err);
     return new Response(
-      '<Response><Message>Something went wrong. Please try again later.\n\nType *help* for available commands.</Message></Response>',
+      '<Response><Message>Something went wrong. Please try again later.\n\nType *3* for help.</Message></Response>',
       { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
     );
   }
