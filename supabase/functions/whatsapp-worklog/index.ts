@@ -6,49 +6,70 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const HELP_TEXT = `📋 *PennyeKart Agent Commands*
+
+📝 *report* <your work details>
+  Submit your daily work log.
+  Example: _report Visited 5 shops in Ward 3, collected 2 orders_
+
+📊 *status*
+  View today's work log summary.
+
+❓ *help*
+  Show this help message.
+
+💡 *Tips:*
+• Send _report_ followed by your work to log it.
+• You can send multiple reports in a day — they will be appended.
+• Your work logs are tracked daily by your team leader.`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Twilio sends webhook data as application/x-www-form-urlencoded
     const formData = await req.formData();
-    const from = formData.get("From") as string; // e.g. "whatsapp:+919876543210"
+    const from = formData.get("From") as string;
     const body = (formData.get("Body") as string)?.trim();
 
     if (!from || !body) {
-      console.error("Missing From or Body in webhook payload");
       return new Response(
         '<Response><Message>Missing message content.</Message></Response>',
         { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
       );
     }
 
-    // Extract phone number from "whatsapp:+91XXXXXXXXXX"
     const phoneRaw = from.replace("whatsapp:", "").trim();
-    // Normalize: remove leading +91 or +, keep last 10 digits for matching
     const last10 = phoneRaw.replace(/\D/g, "").slice(-10);
+    const command = body.toLowerCase();
 
-    console.log(`WhatsApp message from ${phoneRaw} (last10: ${last10}): ${body.substring(0, 100)}`);
+    console.log(`WhatsApp from ${phoneRaw}: ${body.substring(0, 100)}`);
+
+    // Handle help before agent lookup
+    if (command === "help" || command === "hi" || command === "hello") {
+      return new Response(
+        `<Response><Message>${HELP_TEXT}</Message></Response>`,
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+      );
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find agent by mobile number (try exact match first, then last 10 digits)
+    // Find agent
     let { data: agent } = await supabase
       .from("pennyekart_agents")
-      .select("id, name, mobile")
+      .select("id, name, mobile, role")
       .eq("mobile", last10)
       .eq("is_active", true)
       .maybeSingle();
 
     if (!agent) {
-      // Try with full number
       const { data: agent2 } = await supabase
         .from("pennyekart_agents")
-        .select("id, name, mobile")
+        .select("id, name, mobile, role")
         .eq("mobile", phoneRaw)
         .eq("is_active", true)
         .maybeSingle();
@@ -56,78 +77,105 @@ Deno.serve(async (req) => {
     }
 
     if (!agent) {
-      console.log(`No agent found for mobile: ${last10} or ${phoneRaw}`);
       return new Response(
-        '<Response><Message>Your number is not registered as an agent. Please contact admin.</Message></Response>',
+        `<Response><Message>❌ Your number is not registered as an agent. Please contact your team leader.\n\nType *help* for available commands.</Message></Response>`,
         { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
       );
     }
 
-    console.log(`Agent found: ${agent.name} (${agent.id})`);
-
-    // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split("T")[0];
 
-    // Check if a work log already exists for today
-    const { data: existingLog } = await supabase
-      .from("agent_work_logs")
-      .select("id, work_details")
-      .eq("agent_id", agent.id)
-      .eq("work_date", today)
-      .maybeSingle();
-
-    if (existingLog) {
-      // Append new message to existing log
-      const updatedDetails = existingLog.work_details
-        ? `${existingLog.work_details}\n${body}`
-        : body;
-
-      const { error } = await supabase
+    // --- COMMAND: status ---
+    if (command === "status") {
+      const { data: todayLog } = await supabase
         .from("agent_work_logs")
-        .update({ work_details: updatedDetails })
-        .eq("id", existingLog.id);
+        .select("work_details, created_at, updated_at")
+        .eq("agent_id", agent.id)
+        .eq("work_date", today)
+        .maybeSingle();
 
-      if (error) {
-        console.error("Error updating work log:", error);
+      if (todayLog) {
         return new Response(
-          '<Response><Message>Failed to update work log. Please try again.</Message></Response>',
+          `<Response><Message>📊 *Today's Work Log*\n👤 ${agent.name}\n📅 ${today}\n\n${todayLog.work_details}\n\n_Last updated: ${new Date(todayLog.updated_at).toLocaleTimeString("en-IN")}_</Message></Response>`,
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+        );
+      } else {
+        return new Response(
+          `<Response><Message>📊 No work log submitted yet today, ${agent.name}.\n\nUse *report* <details> to submit your work.</Message></Response>`,
           { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
         );
       }
-
-      console.log(`Updated work log for agent ${agent.name} on ${today}`);
-      return new Response(
-        `<Response><Message>✅ Work log updated, ${agent.name}!\n\nToday's log:\n${updatedDetails}</Message></Response>`,
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
-    } else {
-      // Create new work log
-      const { error } = await supabase
-        .from("agent_work_logs")
-        .insert({
-          agent_id: agent.id,
-          work_details: body,
-          work_date: today,
-        });
-
-      if (error) {
-        console.error("Error creating work log:", error);
-        return new Response(
-          '<Response><Message>Failed to save work log. Please try again.</Message></Response>',
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
-      }
-
-      console.log(`Created new work log for agent ${agent.name} on ${today}`);
-      return new Response(
-        `<Response><Message>✅ Work log saved, ${agent.name}!\n\nToday's log:\n${body}</Message></Response>`,
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
     }
+
+    // --- COMMAND: report ---
+    const reportMatch = body.match(/^report\s+(.+)/is);
+    if (reportMatch) {
+      const workDetails = reportMatch[1].trim();
+
+      if (!workDetails) {
+        return new Response(
+          `<Response><Message>⚠️ Please include your work details after *report*.\n\nExample: _report Visited 5 shops, collected 3 orders_</Message></Response>`,
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+        );
+      }
+
+      const { data: existingLog } = await supabase
+        .from("agent_work_logs")
+        .select("id, work_details")
+        .eq("agent_id", agent.id)
+        .eq("work_date", today)
+        .maybeSingle();
+
+      if (existingLog) {
+        const updatedDetails = `${existingLog.work_details}\n${workDetails}`;
+        const { error } = await supabase
+          .from("agent_work_logs")
+          .update({ work_details: updatedDetails })
+          .eq("id", existingLog.id);
+
+        if (error) {
+          return new Response(
+            '<Response><Message>❌ Failed to update work log. Please try again.</Message></Response>',
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+          );
+        }
+
+        return new Response(
+          `<Response><Message>✅ Work log updated, ${agent.name}!\n\n📅 ${today}\n📝 Today's full log:\n${updatedDetails}</Message></Response>`,
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+        );
+      } else {
+        const { error } = await supabase
+          .from("agent_work_logs")
+          .insert({
+            agent_id: agent.id,
+            work_details: workDetails,
+            work_date: today,
+          });
+
+        if (error) {
+          return new Response(
+            '<Response><Message>❌ Failed to save work log. Please try again.</Message></Response>',
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+          );
+        }
+
+        return new Response(
+          `<Response><Message>✅ Work log saved, ${agent.name}!\n\n📅 ${today}\n📝 ${workDetails}</Message></Response>`,
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+        );
+      }
+    }
+
+    // --- UNRECOGNIZED COMMAND ---
+    return new Response(
+      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Available commands:*\n📝 *report* <work details> — Submit work log\n📊 *status* — View today's log\n❓ *help* — Show all commands\n\nExample: _report Visited 5 shops today_</Message></Response>`,
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+    );
   } catch (err) {
     console.error("Webhook error:", err);
     return new Response(
-      '<Response><Message>Something went wrong. Please try again later.</Message></Response>',
+      '<Response><Message>Something went wrong. Please try again later.\n\nType *help* for available commands.</Message></Response>',
       { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
     );
   }
