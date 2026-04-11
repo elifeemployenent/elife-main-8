@@ -92,7 +92,7 @@ interface TaskFeedback {
 }
 
 export default function AgentTasks() {
-  const { isAdmin, isSuperAdmin, adminData, isLoading: authLoading } = useAuth();
+  const { isAdmin, isSuperAdmin, adminData, adminToken, isLoading: authLoading } = useAuth();
   const [panchayaths, setPanchayaths] = useState<Panchayath[]>([]);
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
