@@ -370,64 +370,109 @@ export default function AgentTasks() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={cn(
-                        "p-3 rounded-lg border cursor-pointer transition-colors",
-                        selectedTask?.id === task.id
-                          ? "bg-primary/10 border-primary/30"
-                          : "hover:bg-muted/50"
-                      )}
-                      onClick={() => setSelectedTask(task)}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="font-medium text-sm flex-1 min-w-0">{task.title}</div>
-                        {(isSuperAdmin || isPennyekartAdmin) && (
-                          <div className="flex items-center gap-0.5 flex-shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditTask(task);
-                                setEditTitle(task.title);
-                                setEditDescription(task.description || "");
-                                setEditDialogOpen(true);
-                              }}
-                              title="Edit task"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteTask(task);
-                              }}
-                              title="Delete task"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                  {(() => {
+                    // Group tasks by title+description
+                    const groups: { key: string; title: string; description: string | null; tasks: AgentTask[] }[] = [];
+                    const groupMap = new Map<string, number>();
+                    tasks.forEach((task) => {
+                      const gKey = `${task.title}|||${task.description || ""}`;
+                      if (groupMap.has(gKey)) {
+                        groups[groupMap.get(gKey)!].tasks.push(task);
+                      } else {
+                        groupMap.set(gKey, groups.length);
+                        groups.push({ key: gKey, title: task.title, description: task.description, tasks: [task] });
+                      }
+                    });
+
+                    return groups.map((group) => {
+                      const isExpanded = expandedGroup === group.key;
+                      const isMulti = group.tasks.length > 1;
+                      const hasSelectedInGroup = group.tasks.some((t) => selectedTask?.id === t.id);
+
+                      return (
+                        <div key={group.key} className="border rounded-lg overflow-hidden">
+                          {/* Group header */}
+                          <div
+                            className={cn(
+                              "p-3 cursor-pointer transition-colors",
+                              hasSelectedInGroup ? "bg-primary/10" : "hover:bg-muted/50"
+                            )}
+                            onClick={() => {
+                              if (isMulti) {
+                                setExpandedGroup(isExpanded ? null : group.key);
+                              } else {
+                                setSelectedTask(group.tasks[0]);
+                              }
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                {isMulti && (
+                                  isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <div className="font-medium text-sm truncate">{group.title}</div>
+                              </div>
+                              {!isMulti && (isSuperAdmin || isPennyekartAdmin) && (
+                                <div className="flex items-center gap-0.5 flex-shrink-0">
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                    onClick={(e) => { e.stopPropagation(); setEditTask(group.tasks[0]); setEditTitle(group.tasks[0].title); setEditDescription(group.tasks[0].description || ""); setEditDialogOpen(true); }} title="Edit task">
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                    onClick={(e) => { e.stopPropagation(); setDeleteTask(group.tasks[0]); }} title="Delete task">
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            {group.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 ml-5">{group.description}</p>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap ml-5">
+                              {isMulti && !isExpanded ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  <Building2 className="h-3 w-3 mr-1" />
+                                  {group.tasks.length} panchayaths
+                                </Badge>
+                              ) : !isMulti ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  <Building2 className="h-3 w-3 mr-1" />
+                                  {group.tasks[0].panchayath?.name || "Unknown"}
+                                </Badge>
+                              ) : null}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      {task.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary" className="text-[10px]">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          {task.panchayath?.name || "Unknown"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+
+                          {/* Expanded panchayath list */}
+                          {isMulti && isExpanded && (
+                            <div className="border-t divide-y">
+                              {group.tasks.map((task) => (
+                                <div
+                                  key={task.id}
+                                  className={cn(
+                                    "px-3 py-2 pl-8 cursor-pointer transition-colors flex items-center justify-between gap-1",
+                                    selectedTask?.id === task.id ? "bg-primary/10" : "hover:bg-muted/30"
+                                  )}
+                                  onClick={() => setSelectedTask(task)}
+                                >
+                                  <Badge variant={selectedTask?.id === task.id ? "default" : "secondary"} className="text-[10px]">
+                                    <Building2 className="h-3 w-3 mr-1" />
+                                    {task.panchayath?.name || "Unknown"}
+                                  </Badge>
+                                  {(isSuperAdmin || isPennyekartAdmin) && (
+                                    <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                                      onClick={(e) => { e.stopPropagation(); setDeleteTask(task); }} title="Delete">
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </CardContent>
