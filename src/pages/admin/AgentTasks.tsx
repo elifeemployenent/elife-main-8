@@ -382,7 +382,7 @@ export default function AgentTasks() {
                     >
                       <div className="flex items-start justify-between gap-1">
                         <div className="font-medium text-sm flex-1 min-w-0">{task.title}</div>
-                        {isSuperAdmin && (
+                        {(isSuperAdmin || isPennyekartAdmin) && (
                           <div className="flex items-center gap-0.5 flex-shrink-0">
                             <Button
                               variant="ghost"
