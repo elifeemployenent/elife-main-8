@@ -96,6 +96,7 @@ export default function AgentTasks() {
   const [panchayaths, setPanchayaths] = useState<Panchayath[]>([]);
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<AgentTask | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [selectedPanchayath, setSelectedPanchayath] = useState<string>("");
   const [agents, setAgents] = useState<PennyekartAgent[]>([]);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, TaskFeedback>>({});
