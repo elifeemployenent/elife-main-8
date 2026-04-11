@@ -211,12 +211,14 @@ export default function AgentTasks() {
       title: newTitle.trim(),
       description: newDescription.trim() || null,
       panchayath_id: pid,
-      created_by: adminData?.id || null,
     }));
-    const { error } = await supabase.from("pennyekart_agent_tasks").insert(rows);
+    const { data, error } = await supabase.functions.invoke("pennyekart-agents", {
+      body: { action: "create_task", tasks: rows },
+      headers: adminToken ? { "x-admin-token": adminToken } : {},
+    });
     setIsCreating(false);
-    if (error) {
-      toast.error("Failed to create task");
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to create task");
       return;
     }
     toast.success(`Task created for ${newPanchayathIds.length} panchayath(s)`);
