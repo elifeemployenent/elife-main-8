@@ -253,11 +253,12 @@ export default function AgentTasks() {
   const handleDeleteTask = async () => {
     if (!deleteTask) return;
     setIsDeleting(true);
-    // Delete feedback first, then task
-    await supabase.from("pennyekart_agent_task_feedback").delete().eq("task_id", deleteTask.id);
-    const { error } = await supabase.from("pennyekart_agent_tasks").delete().eq("id", deleteTask.id);
+    const { data, error } = await supabase.functions.invoke("pennyekart-agents", {
+      body: { action: "delete_task", id: deleteTask.id },
+      headers: adminToken ? { "x-admin-token": adminToken } : {},
+    });
     setIsDeleting(false);
-    if (error) {
+    if (error || data?.error) {
       toast.error("Failed to delete task");
       return;
     }
@@ -275,29 +276,20 @@ export default function AgentTasks() {
     if (!selectedTask) return;
 
     const existing = feedbackMap[agentId];
-    if (existing) {
-      const { error } = await supabase
-        .from("pennyekart_agent_task_feedback")
-        .update({ status, remarks: remarks || null })
-        .eq("id", existing.id);
-      if (error) {
-        toast.error("Failed to update feedback");
-        return;
-      }
-    } else {
-      const { error } = await supabase
-        .from("pennyekart_agent_task_feedback")
-        .insert({
-          task_id: selectedTask.id,
-          agent_id: agentId,
-          status,
-          remarks: remarks || null,
-          feedback_by: adminData?.id || null,
-        });
-      if (error) {
-        toast.error("Failed to save feedback");
-        return;
-      }
+    const { data, error } = await supabase.functions.invoke("pennyekart-agents", {
+      body: {
+        action: "save_feedback",
+        task_id: selectedTask.id,
+        agent_id: agentId,
+        status,
+        remarks: remarks || null,
+        existing_id: existing?.id || null,
+      },
+      headers: adminToken ? { "x-admin-token": adminToken } : {},
+    });
+    if (error || data?.error) {
+      toast.error("Failed to save feedback");
+      return;
     }
 
     // Refresh feedback
