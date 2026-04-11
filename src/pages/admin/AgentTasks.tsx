@@ -232,12 +232,12 @@ export default function AgentTasks() {
   const handleEditTask = async () => {
     if (!editTask || !editTitle.trim()) return;
     setIsEditing(true);
-    const { error } = await supabase
-      .from("pennyekart_agent_tasks")
-      .update({ title: editTitle.trim(), description: editDescription.trim() || null })
-      .eq("id", editTask.id);
+    const { data, error } = await supabase.functions.invoke("pennyekart-agents", {
+      body: { action: "update_task", id: editTask.id, title: editTitle.trim(), description: editDescription.trim() || null },
+      headers: adminToken ? { "x-admin-token": adminToken } : {},
+    });
     setIsEditing(false);
-    if (error) {
+    if (error || data?.error) {
       toast.error("Failed to update task");
       return;
     }
