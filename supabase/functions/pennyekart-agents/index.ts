@@ -298,6 +298,69 @@ serve(async (req) => {
       });
     }
 
+    // ── Task CRUD ──
+    if (req.method === "POST" && action === "create_task") {
+      const { tasks: taskRows } = body;
+      const { data, error } = await supabase
+        .from("pennyekart_agent_tasks")
+        .insert(taskRows.map((t: any) => ({ ...t, created_by: admin.admin_id })))
+        .select();
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (req.method === "POST" && action === "update_task") {
+      const { id, title, description } = body;
+      const { data, error } = await supabase
+        .from("pennyekart_agent_tasks")
+        .update({ title, description })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (req.method === "POST" && action === "delete_task") {
+      const { id } = body;
+      await supabase.from("pennyekart_agent_task_feedback").delete().eq("task_id", id);
+      const { error } = await supabase.from("pennyekart_agent_tasks").delete().eq("id", id);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Task Feedback ──
+    if (req.method === "POST" && action === "save_feedback") {
+      const { task_id, agent_id, status, remarks, existing_id } = body;
+      if (existing_id) {
+        const { error } = await supabase
+          .from("pennyekart_agent_task_feedback")
+          .update({ status, remarks: remarks || null })
+          .eq("id", existing_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("pennyekart_agent_task_feedback")
+          .insert({
+            task_id,
+            agent_id,
+            status,
+            remarks: remarks || null,
+            feedback_by: admin.admin_id,
+          });
+        if (error) throw error;
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
