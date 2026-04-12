@@ -1173,6 +1173,42 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_bot_commands: {
+        Row: {
+          alt_keyword: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          keyword: string
+          label: string
+          response_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          alt_keyword?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword: string
+          label: string
+          response_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          alt_keyword?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          label?: string
+          response_text?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
