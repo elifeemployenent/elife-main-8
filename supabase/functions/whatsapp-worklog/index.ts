@@ -18,6 +18,9 @@ const HELP_TEXT = `📋 *PennyeKart Agent Commands*
 3️⃣
   Show this help message.
 
+4️⃣
+  Check your wallet balance.
+
 💡 *Tips:*
 • Send *1* followed by your work to log it.
 • You can send multiple reports in a day — they will be appended.
@@ -167,9 +170,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- COMMAND: 4 = wallet balance ---
+    if (command === "4" || command.toLowerCase() === "balance") {
+      const { data: transactions, error: walletError } = await supabase
+        .from("agent_wallet_transactions")
+        .select("amount")
+        .eq("agent_id", agent.id);
+
+      if (walletError) {
+        return new Response(
+          '<Response><Message>❌ Failed to fetch wallet balance. Please try again.</Message></Response>',
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+        );
+      }
+
+      const balance = (transactions || []).reduce((sum: number, t: { amount: number }) => sum + Number(t.amount), 0);
+      const formatted = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(balance);
+
+      return new Response(
+        `<Response><Message>💰 *Wallet Balance*\n👤 ${agent.name}\n💳 Available Balance: ${formatted}</Message></Response>`,
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+      );
+    }
+
     // --- UNRECOGNIZED COMMAND ---
     return new Response(
-      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n\nExample: _1 Visited 5 shops today_</Message></Response>`,
+      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance\n\nExample: _1 Visited 5 shops today_</Message></Response>`,
       { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
     );
   } catch (err) {
