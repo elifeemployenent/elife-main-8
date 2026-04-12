@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const HELP_TEXT = `📋 *PennyeKart Agent Commands*
+const CORE_HELP = `📋 *PennyeKart Agent Commands*
 
 1️⃣ <your work details>
   Submit your daily work log.
@@ -19,12 +19,26 @@ const HELP_TEXT = `📋 *PennyeKart Agent Commands*
   Show this help message.
 
 4️⃣
-  Check your wallet balance.
+  Check your wallet balance.`;
 
-💡 *Tips:*
+function buildHelpText(customCommands: Array<{ keyword: string; label: string }>) {
+  let help = CORE_HELP;
+  for (const cmd of customCommands) {
+    help += `\n\n${cmd.keyword}️⃣\n  ${cmd.label}`;
+  }
+  help += `\n\n💡 *Tips:*
 • Send *1* followed by your work to log it.
 • You can send multiple reports in a day — they will be appended.
 • Your work logs are tracked daily by your team leader.`;
+  return help;
+}
+
+function twiml(msg: string) {
+  return new Response(
+    `<Response><Message>${msg}</Message></Response>`,
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
+  );
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -37,10 +51,7 @@ Deno.serve(async (req) => {
     const body = (formData.get("Body") as string)?.trim();
 
     if (!from || !body) {
-      return new Response(
-        '<Response><Message>Missing message content.</Message></Response>',
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
+      return twiml("Missing message content.");
     }
 
     const phoneRaw = from.replace("whatsapp:", "").trim();
@@ -49,17 +60,23 @@ Deno.serve(async (req) => {
 
     console.log(`WhatsApp from ${phoneRaw}: ${body.substring(0, 100)}`);
 
-    // Handle help before agent lookup
-    if (command === "3" || command.toLowerCase() === "help" || command.toLowerCase() === "hi" || command.toLowerCase() === "hello") {
-      return new Response(
-        `<Response><Message>${HELP_TEXT}</Message></Response>`,
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch custom commands for help & matching
+    const { data: customCommands } = await supabase
+      .from("whatsapp_bot_commands")
+      .select("keyword, alt_keyword, label, response_text")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    const activeCustom = customCommands || [];
+
+    // Handle help before agent lookup
+    if (command === "3" || command.toLowerCase() === "help" || command.toLowerCase() === "hi" || command.toLowerCase() === "hello") {
+      return twiml(buildHelpText(activeCustom));
+    }
 
     // Find agent
     let { data: agent } = await supabase
@@ -80,10 +97,7 @@ Deno.serve(async (req) => {
     }
 
     if (!agent) {
-      return new Response(
-        `<Response><Message>❌ Your number is not registered as an agent. Please contact your team leader.\n\nType *3* for help.</Message></Response>`,
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
+      return twiml(`❌ Your number is not registered as an agent. Please contact your team leader.\n\nType *3* for help.`);
     }
 
     const today = new Date().toISOString().split("T")[0];
@@ -98,15 +112,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (todayLog) {
-        return new Response(
-          `<Response><Message>📊 *Today's Work Log*\n👤 ${agent.name}\n📅 ${today}\n\n${todayLog.work_details}\n\n_Last updated: ${new Date(todayLog.updated_at).toLocaleTimeString("en-IN")}_</Message></Response>`,
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml(`📊 *Today's Work Log*\n👤 ${agent.name}\n📅 ${today}\n\n${todayLog.work_details}\n\n_Last updated: ${new Date(todayLog.updated_at).toLocaleTimeString("en-IN")}_`);
       } else {
-        return new Response(
-          `<Response><Message>📊 No work log submitted yet today, ${agent.name}.\n\nSend *1* <details> to submit your work.</Message></Response>`,
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml(`📊 No work log submitted yet today, ${agent.name}.\n\nSend *1* <details> to submit your work.`);
       }
     }
 
@@ -116,10 +124,7 @@ Deno.serve(async (req) => {
       const workDetails = reportMatch[1].trim();
 
       if (!workDetails) {
-        return new Response(
-          `<Response><Message>⚠️ Please include your work details after *1*.\n\nExample: _1 Visited 5 shops, collected 3 orders_</Message></Response>`,
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml(`⚠️ Please include your work details after *1*.\n\nExample: _1 Visited 5 shops, collected 3 orders_`);
       }
 
       const { data: existingLog } = await supabase
@@ -137,16 +142,10 @@ Deno.serve(async (req) => {
           .eq("id", existingLog.id);
 
         if (error) {
-          return new Response(
-            '<Response><Message>❌ Failed to update work log. Please try again.</Message></Response>',
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-          );
+          return twiml("❌ Failed to update work log. Please try again.");
         }
 
-        return new Response(
-          `<Response><Message>✅ Work log updated, ${agent.name}!\n\n📅 ${today}\n📝 Today's full log:\n${updatedDetails}</Message></Response>`,
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml(`✅ Work log updated, ${agent.name}!\n\n📅 ${today}\n📝 Today's full log:\n${updatedDetails}`);
       } else {
         const { error } = await supabase
           .from("agent_work_logs")
@@ -157,16 +156,10 @@ Deno.serve(async (req) => {
           });
 
         if (error) {
-          return new Response(
-            '<Response><Message>❌ Failed to save work log. Please try again.</Message></Response>',
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-          );
+          return twiml("❌ Failed to save work log. Please try again.");
         }
 
-        return new Response(
-          `<Response><Message>✅ Work log saved, ${agent.name}!\n\n📅 ${today}\n📝 ${workDetails}</Message></Response>`,
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml(`✅ Work log saved, ${agent.name}!\n\n📅 ${today}\n📝 ${workDetails}`);
       }
     }
 
@@ -178,26 +171,31 @@ Deno.serve(async (req) => {
         .eq("agent_id", agent.id);
 
       if (walletError) {
-        return new Response(
-          '<Response><Message>❌ Failed to fetch wallet balance. Please try again.</Message></Response>',
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-        );
+        return twiml("❌ Failed to fetch wallet balance. Please try again.");
       }
 
       const balance = (transactions || []).reduce((sum: number, t: { amount: number }) => sum + Number(t.amount), 0);
       const formatted = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(balance);
 
-      return new Response(
-        `<Response><Message>💰 *Wallet Balance*\n👤 ${agent.name}\n💳 Available Balance: ${formatted}</Message></Response>`,
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-      );
+      return twiml(`💰 *Wallet Balance*\n👤 ${agent.name}\n💳 Available Balance: ${formatted}`);
+    }
+
+    // --- DYNAMIC CUSTOM COMMANDS ---
+    const cmdLower = command.toLowerCase();
+    for (const cc of activeCustom) {
+      if (cmdLower === cc.keyword.toLowerCase() || (cc.alt_keyword && cmdLower === cc.alt_keyword.toLowerCase())) {
+        return twiml(cc.response_text);
+      }
     }
 
     // --- UNRECOGNIZED COMMAND ---
-    return new Response(
-      `<Response><Message>🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance\n\nExample: _1 Visited 5 shops today_</Message></Response>`,
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-    );
+    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance`;
+    for (const cc of activeCustom) {
+      fallback += `\n${cc.keyword}️⃣ *${cc.keyword}* — ${cc.label}`;
+    }
+    fallback += `\n\nExample: _1 Visited 5 shops today_`;
+
+    return twiml(fallback);
   } catch (err) {
     console.error("Webhook error:", err);
     return new Response(
