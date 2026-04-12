@@ -18,6 +18,9 @@ const HELP_TEXT = `📋 *PennyeKart Agent Commands*
 3️⃣
   Show this help message.
 
+4️⃣
+  Check your wallet balance.
+
 💡 *Tips:*
 • Send *1* followed by your work to log it.
 • You can send multiple reports in a day — they will be appended.
