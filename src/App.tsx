@@ -32,6 +32,7 @@ import OldPaymentsUpload from "./pages/admin/OldPaymentsUpload";
 import SalesReport from "./pages/admin/SalesReport";
 import Payouts from "./pages/admin/Payouts";
 import AgentTasks from "./pages/admin/AgentTasks";
+import WhatsAppCommands from "./pages/admin/WhatsAppCommands";
 
 const queryClient = new QueryClient();
 
@@ -218,6 +219,16 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["super_admin"]}>
                   <Payouts />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* WhatsApp Bot Commands - Super Admin only */}
+            <Route
+              path="/admin/whatsapp-commands"
+              element={
+                <ProtectedRoute requiredRoles={["super_admin"]}>
+                  <WhatsAppCommands />
                 </ProtectedRoute>
               }
             />
