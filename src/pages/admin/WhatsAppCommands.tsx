@@ -69,7 +69,7 @@ interface CommandFormData {
 
 const CORE_COMMANDS = [
   { keyword: "1", label: "Submit daily work log", description: "1 <work details>" },
-  { keyword: "2", label: "View today's work log summary", description: "2 or status" },
+  { keyword: "2", label: "View reporting person details", description: "2 or status" },
   { keyword: "3", label: "Show help message", description: "3, help, hi, hello" },
   { keyword: "4", label: "Check wallet balance", description: "4 or balance" },
 ];
