@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     // Find agent
     let { data: agent } = await supabase
       .from("pennyekart_agents")
-      .select("id, name, mobile, role")
+      .select("id, name, mobile, role, parent_agent_id")
       .eq("mobile", last10)
       .eq("is_active", true)
       .maybeSingle();
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     if (!agent) {
       const { data: agent2 } = await supabase
         .from("pennyekart_agents")
-        .select("id, name, mobile, role")
+        .select("id, name, mobile, role, parent_agent_id")
         .eq("mobile", phoneRaw)
         .eq("is_active", true)
         .maybeSingle();
