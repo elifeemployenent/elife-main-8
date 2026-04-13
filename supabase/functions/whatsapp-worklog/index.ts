@@ -13,7 +13,7 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
   Example: _1 Visited 5 shops in Ward 3, collected 2 orders_
 
 2️⃣
-  View today's work log summary.
+  View your reporting person details.
 
 3️⃣
   Show this help message.
@@ -106,20 +106,45 @@ Deno.serve(async (req) => {
 
     const today = new Date().toISOString().split("T")[0];
 
-    // --- COMMAND: 2 = status ---
+    // --- COMMAND: 2 = reporting person details ---
     if (command === "2" || command.toLowerCase() === "status") {
-      const { data: todayLog } = await supabase
-        .from("agent_work_logs")
-        .select("work_details, created_at, updated_at")
-        .eq("agent_id", agent.id)
-        .eq("work_date", today)
-        .maybeSingle();
+      const roleLabels: Record<string, string> = {
+        team_leader: "Team Leader",
+        coordinator: "Coordinator",
+        group_leader: "Group Leader",
+        pro: "PRO",
+        scode: "S-Code",
+      };
 
-      if (todayLog) {
-        return twiml(`📊 *Today's Work Log*\n👤 ${agent.name}\n📅 ${today}\n\n${todayLog.work_details}\n\n_Last updated: ${new Date(todayLog.updated_at).toLocaleTimeString("en-IN")}_`);
-      } else {
-        return twiml(`📊 No work log submitted yet today, ${agent.name}.\n\nSend *1* <details> to submit your work.`);
+      // Walk up the parent chain to collect reporting hierarchy
+      const hierarchy: Array<{ name: string; mobile: string; role: string }> = [];
+      let currentParentId = agent.parent_agent_id;
+      let depth = 0;
+
+      while (currentParentId && depth < 5) {
+        const { data: parent } = await supabase
+          .from("pennyekart_agents")
+          .select("id, name, mobile, role, parent_agent_id")
+          .eq("id", currentParentId)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (!parent) break;
+        hierarchy.push({ name: parent.name, mobile: parent.mobile, role: parent.role });
+        currentParentId = parent.parent_agent_id;
+        depth++;
       }
+
+      if (hierarchy.length === 0) {
+        return twiml(`👤 *${agent.name}* (${roleLabels[agent.role] || agent.role})\n\nNo reporting person found. You may be a top-level agent.`);
+      }
+
+      let msg = `👤 *Your Reporting Chain*\n🏷️ ${agent.name} (${roleLabels[agent.role] || agent.role})\n`;
+      for (const h of hierarchy) {
+        msg += `\n⬆️ *${roleLabels[h.role] || h.role}*\n   ${h.name}\n   📞 ${h.mobile}`;
+      }
+
+      return twiml(msg);
     }
 
     // --- COMMAND: 1 = report ---
