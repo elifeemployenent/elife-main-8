@@ -33,9 +33,13 @@ function buildHelpText(customCommands: Array<{ keyword: string; label: string }>
   return help;
 }
 
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
 function twiml(msg: string) {
   return new Response(
-    `<Response><Message>${msg}</Message></Response>`,
+    `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(msg)}</Message></Response>`,
     { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
   );
 }
@@ -198,9 +202,6 @@ Deno.serve(async (req) => {
     return twiml(fallback);
   } catch (err) {
     console.error("Webhook error:", err);
-    return new Response(
-      '<Response><Message>Something went wrong. Please try again later.\n\nType *3* for help.</Message></Response>',
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
-    );
+    return twiml("Something went wrong. Please try again later.\n\nType *3* for help.");
   }
 });
