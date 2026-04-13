@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
     }
 
     // --- UNRECOGNIZED COMMAND ---
-    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — View today's log\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance`;
+    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — Reporting person details\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance`;
     for (const cc of activeCustom) {
       fallback += `\n${cc.keyword}️⃣ *${cc.keyword}* — ${cc.label}`;
     }
