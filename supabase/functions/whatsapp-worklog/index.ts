@@ -15,8 +15,11 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
 2️⃣
   View your reporting person details.
 
+3️⃣
+  View your complaint status.
+
 3️⃣ <your complaint>
-  Register a complaint.
+  Register a new complaint.
   Example: _3 Delivery not received for order #123_
 
 4️⃣
@@ -248,7 +251,38 @@ Deno.serve(async (req) => {
     }
 
     if (command === "3") {
-      return twiml(`⚠️ Please include your complaint details after *3*.\n\nExample: _3 Delivery not received for order #123_`);
+      // Show complaint status
+      const { data: myComplaints, error: cErr } = await supabase
+        .from("agent_complaints")
+        .select("complaint_text, status, admin_remarks, created_at, updated_at")
+        .eq("agent_id", agent.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (cErr) {
+        console.error("Complaint fetch error:", cErr);
+        return twiml("❌ Failed to fetch complaints. Please try again.");
+      }
+
+      if (!myComplaints || myComplaints.length === 0) {
+        return twiml(`📋 *Complaint Status*\n\nNo complaints found, ${agent.name}.\n\nTo register a new complaint, send:\n_3 <your complaint>_`);
+      }
+
+      const statusEmoji: Record<string, string> = { pending: "⏳", resolved: "✅", dismissed: "❌" };
+      let msg = `📋 *Your Recent Complaints*\n👤 ${agent.name}\n`;
+
+      for (const c of myComplaints) {
+        const date = new Date(c.created_at).toLocaleDateString("en-IN");
+        const emoji = statusEmoji[c.status] || "❓";
+        msg += `\n${emoji} *${c.status.toUpperCase()}* — ${date}`;
+        msg += `\n   📝 ${c.complaint_text.substring(0, 80)}${c.complaint_text.length > 80 ? "..." : ""}`;
+        if (c.admin_remarks) {
+          msg += `\n   💬 _${c.admin_remarks}_`;
+        }
+      }
+
+      msg += `\n\n📌 To register a new complaint:\n_3 <your complaint>_`;
+      return twiml(msg);
     }
 
     // --- COMMAND: 1 = report ---
