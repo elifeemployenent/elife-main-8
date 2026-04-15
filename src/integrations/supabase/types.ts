@@ -73,6 +73,47 @@ export type Database = {
           },
         ]
       }
+      agent_complaints: {
+        Row: {
+          admin_remarks: string | null
+          agent_id: string
+          complaint_text: string
+          created_at: string
+          id: string
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_remarks?: string | null
+          agent_id: string
+          complaint_text: string
+          created_at?: string
+          id?: string
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_remarks?: string | null
+          agent_id?: string
+          complaint_text?: string
+          created_at?: string
+          id?: string
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_complaints_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_wallet_transactions: {
         Row: {
           agent_id: string
