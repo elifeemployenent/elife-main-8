@@ -102,14 +102,29 @@ export function AgentComplaintsTab() {
       })
       .eq("id", selectedComplaint.id);
 
-    setSaving(false);
     if (error) {
+      setSaving(false);
       toast.error("Failed to update complaint");
-    } else {
-      toast.success("Complaint updated");
-      setSelectedComplaint(null);
-      fetchComplaints();
+      return;
     }
+
+    // Send WhatsApp feedback to agent
+    try {
+      await supabase.functions.invoke("complaint-feedback", {
+        body: {
+          complaint_id: selectedComplaint.id,
+          status: newStatus,
+          admin_remarks: remarks || null,
+        },
+      });
+      toast.success("Complaint updated & feedback sent to agent via WhatsApp");
+    } catch {
+      toast.success("Complaint updated (WhatsApp feedback could not be sent)");
+    }
+
+    setSaving(false);
+    setSelectedComplaint(null);
+    fetchComplaints();
   };
 
   const openDetail = (c: Complaint) => {
