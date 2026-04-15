@@ -55,6 +55,7 @@ import { ExportFilterDialog } from "@/components/pennyekart/ExportFilterDialog";
 import { toast } from "sonner";
 import { exportAgentsToXlsx, exportAgentsToPdf, shareAgentsViaWhatsApp } from "@/lib/exportAgents";
 import { AgentRanksTab } from "@/components/pennyekart/AgentRanksTab";
+import { AgentWorkLogReport } from "@/components/pennyekart/AgentWorkLogReport";
 
 interface Panchayath {
   id: string;
@@ -337,6 +338,10 @@ export default function PennyekartAgentHierarchy() {
               <Trophy className="h-4 w-4" />
               Agent Ranks
             </TabsTrigger>
+            <TabsTrigger value="worklogs" className="gap-1.5">
+              <FileText className="h-4 w-4" />
+              Work Logs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
@@ -433,6 +438,10 @@ export default function PennyekartAgentHierarchy() {
             ) : (
               <AgentRanksTab agents={agents} allAgents={agents} panchayaths={panchayaths} onSelectAgent={setSelectedAgent} />
             )}
+          </TabsContent>
+
+          <TabsContent value="worklogs">
+            <AgentWorkLogReport panchayaths={panchayaths} />
           </TabsContent>
         </Tabs>
 
