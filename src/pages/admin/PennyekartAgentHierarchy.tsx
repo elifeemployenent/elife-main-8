@@ -338,6 +338,10 @@ export default function PennyekartAgentHierarchy() {
               <Trophy className="h-4 w-4" />
               Agent Ranks
             </TabsTrigger>
+            <TabsTrigger value="worklogs" className="gap-1.5">
+              <FileText className="h-4 w-4" />
+              Work Logs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
