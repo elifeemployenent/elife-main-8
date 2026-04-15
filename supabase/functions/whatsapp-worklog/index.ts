@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (command === "3") {
+    if (isStatusCheck) {
       // Show complaint status
       const { data: myComplaints, error: cErr } = await supabase
         .from("agent_complaints")
