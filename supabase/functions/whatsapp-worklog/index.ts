@@ -15,8 +15,8 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
 2️⃣
   View your reporting person details.
 
-3️⃣
-  View your complaint status.
+3️⃣ ?
+  Check your complaint status & admin remarks.
 
 3️⃣ <your complaint>
   Register a new complaint.
