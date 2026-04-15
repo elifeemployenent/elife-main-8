@@ -57,43 +57,34 @@ Deno.serve(async (req) => {
     message += `\n📅 Updated: ${new Date().toLocaleDateString("en-IN")}\n`;
     message += `\nThank you for your feedback. If you have any further concerns, send *3 <your message>*.`;
 
-    // Send via Twilio
+    // Send via Twilio connector gateway
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const twilioApiKey = Deno.env.get("TWILIO_API_KEY");
-    if (!twilioApiKey) {
-      console.error("TWILIO_API_KEY not set");
+
+    if (!lovableApiKey || !twilioApiKey) {
+      console.error("Missing LOVABLE_API_KEY or TWILIO_API_KEY");
       return new Response(
         JSON.stringify({ error: "Twilio not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Parse Twilio API key format: ACCOUNT_SID:AUTH_TOKEN:FROM_NUMBER
-    const parts = twilioApiKey.split(":");
-    if (parts.length < 3) {
-      console.error("Invalid TWILIO_API_KEY format");
-      return new Response(
-        JSON.stringify({ error: "Invalid Twilio config" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const [accountSid, authToken, fromNumber] = parts;
     const toNumber = agentMobile.startsWith("+") ? agentMobile : `+91${agentMobile}`;
 
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const twilioBody = new URLSearchParams({
-      From: `whatsapp:${fromNumber}`,
-      To: `whatsapp:${toNumber}`,
-      Body: message,
-    });
+    const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 
-    const twilioRes = await fetch(twilioUrl, {
+    const twilioRes = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+        "Authorization": `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": twilioApiKey,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: twilioBody.toString(),
+      body: new URLSearchParams({
+        To: `whatsapp:${toNumber}`,
+        From: `whatsapp:+14155238886`,
+        Body: message,
+      }).toString(),
     });
 
     const twilioData = await twilioRes.json();
