@@ -439,6 +439,10 @@ export default function PennyekartAgentHierarchy() {
               <AgentRanksTab agents={agents} allAgents={agents} panchayaths={panchayaths} onSelectAgent={setSelectedAgent} />
             )}
           </TabsContent>
+
+          <TabsContent value="worklogs">
+            <AgentWorkLogReport panchayaths={panchayaths} />
+          </TabsContent>
         </Tabs>
 
         {/* Form Dialog */}
