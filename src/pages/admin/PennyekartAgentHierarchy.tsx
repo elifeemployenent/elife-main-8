@@ -56,6 +56,8 @@ import { toast } from "sonner";
 import { exportAgentsToXlsx, exportAgentsToPdf, shareAgentsViaWhatsApp } from "@/lib/exportAgents";
 import { AgentRanksTab } from "@/components/pennyekart/AgentRanksTab";
 import { AgentWorkLogReport } from "@/components/pennyekart/AgentWorkLogReport";
+import { AgentComplaintsTab } from "@/components/pennyekart/AgentComplaintsTab";
+import { MessageSquareWarning } from "lucide-react";
 
 interface Panchayath {
   id: string;
@@ -342,6 +344,10 @@ export default function PennyekartAgentHierarchy() {
               <FileText className="h-4 w-4" />
               Work Logs
             </TabsTrigger>
+            <TabsTrigger value="complaints" className="gap-1.5">
+              <MessageSquareWarning className="h-4 w-4" />
+              Complaints
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
@@ -442,6 +448,10 @@ export default function PennyekartAgentHierarchy() {
 
           <TabsContent value="worklogs">
             <AgentWorkLogReport panchayaths={panchayaths} />
+          </TabsContent>
+
+          <TabsContent value="complaints">
+            <AgentComplaintsTab />
           </TabsContent>
         </Tabs>
 

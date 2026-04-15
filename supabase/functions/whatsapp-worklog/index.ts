@@ -15,8 +15,9 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
 2️⃣
   View your reporting person details.
 
-3️⃣
-  Show this help message.
+3️⃣ <your complaint>
+  Register a complaint.
+  Example: _3 Delivery not received for order #123_
 
 4️⃣
   Check your wallet balance.
@@ -28,7 +29,10 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
   Coordinator absence report (by panchayath).
 
 7️⃣
-  Group Leader absence report (by panchayath).`;
+  Group Leader absence report (by panchayath).
+
+8️⃣
+  Show this help message.`;
 
 function buildHelpText(customCommands: Array<{ keyword: string; label: string }>) {
   let help = CORE_HELP;
@@ -159,7 +163,7 @@ Deno.serve(async (req) => {
     const activeCustom = customCommands || [];
 
     // Handle help before agent lookup
-    if (command === "3" || command.toLowerCase() === "help" || command.toLowerCase() === "hi" || command.toLowerCase() === "hello") {
+    if (command === "8" || command.toLowerCase() === "help" || command.toLowerCase() === "hi" || command.toLowerCase() === "hello") {
       return twiml(buildHelpText(activeCustom));
     }
 
@@ -217,6 +221,34 @@ Deno.serve(async (req) => {
       }
 
       return twiml(msg);
+    }
+
+    // --- COMMAND: 3 = complaint register ---
+    const complaintMatch = body.match(/^3\s+(.+)/is);
+    if (complaintMatch) {
+      const complaintText = complaintMatch[1].trim();
+
+      if (!complaintText) {
+        return twiml(`⚠️ Please include your complaint details after *3*.\n\nExample: _3 Delivery not received for order #123_`);
+      }
+
+      const { error } = await supabase
+        .from("agent_complaints")
+        .insert({
+          agent_id: agent.id,
+          complaint_text: complaintText,
+        });
+
+      if (error) {
+        console.error("Complaint insert error:", error);
+        return twiml("❌ Failed to register complaint. Please try again.");
+      }
+
+      return twiml(`✅ Complaint registered, ${agent.name}!\n\n📝 ${complaintText}\n\nYour complaint has been submitted and will be reviewed by the admin team.`);
+    }
+
+    if (command === "3") {
+      return twiml(`⚠️ Please include your complaint details after *3*.\n\nExample: _3 Delivery not received for order #123_`);
     }
 
     // --- COMMAND: 1 = report ---
@@ -387,7 +419,7 @@ Deno.serve(async (req) => {
     }
 
     // --- UNRECOGNIZED COMMAND ---
-    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — Reporting person details\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance\n5️⃣ *5* — Absence report\n6️⃣ *6* — Coordinator report\n7️⃣ *7* — Group Leader report`;
+    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — Reporting person details\n3️⃣ *3* <complaint> — Register complaint\n4️⃣ *4* — Wallet balance\n5️⃣ *5* — Absence report\n6️⃣ *6* — Coordinator report\n7️⃣ *7* — Group Leader report\n8️⃣ *8* — Help`;
     for (const cc of activeCustom) {
       fallback += `\n${cc.keyword}️⃣ *${cc.keyword}* — ${cc.label}`;
     }
