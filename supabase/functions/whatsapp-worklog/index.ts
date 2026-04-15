@@ -15,8 +15,8 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
 2️⃣
   View your reporting person details.
 
-3️⃣
-  View your complaint status.
+3️⃣ ?
+  Check your complaint status & admin remarks.
 
 3️⃣ <your complaint>
   Register a new complaint.
@@ -226,31 +226,36 @@ Deno.serve(async (req) => {
       return twiml(msg);
     }
 
-    // --- COMMAND: 3 = complaint register ---
-    const complaintMatch = body.match(/^3\s+(.+)/is);
-    if (complaintMatch) {
-      const complaintText = complaintMatch[1].trim();
+    // --- COMMAND: 3 ? or 3 alone = check complaint status ---
+    const isStatusCheck = command === "3" || /^3\s*\?$/i.test(command);
 
-      if (!complaintText) {
-        return twiml(`⚠️ Please include your complaint details after *3*.\n\nExample: _3 Delivery not received for order #123_`);
+    if (!isStatusCheck) {
+      // --- COMMAND: 3 <text> = register complaint ---
+      const complaintMatch = body.match(/^3\s+(.+)/is);
+      if (complaintMatch) {
+        const complaintText = complaintMatch[1].trim();
+
+        if (!complaintText) {
+          return twiml(`⚠️ Please include your complaint details after *3*.\n\nExample: _3 Delivery not received for order #123_`);
+        }
+
+        const { error } = await supabase
+          .from("agent_complaints")
+          .insert({
+            agent_id: agent.id,
+            complaint_text: complaintText,
+          });
+
+        if (error) {
+          console.error("Complaint insert error:", error);
+          return twiml("❌ Failed to register complaint. Please try again.");
+        }
+
+        return twiml(`✅ Complaint registered, ${agent.name}!\n\n📝 ${complaintText}\n\nYour complaint has been submitted and will be reviewed by the admin team.\n\nSend *3 ?* to check your complaint status.`);
       }
-
-      const { error } = await supabase
-        .from("agent_complaints")
-        .insert({
-          agent_id: agent.id,
-          complaint_text: complaintText,
-        });
-
-      if (error) {
-        console.error("Complaint insert error:", error);
-        return twiml("❌ Failed to register complaint. Please try again.");
-      }
-
-      return twiml(`✅ Complaint registered, ${agent.name}!\n\n📝 ${complaintText}\n\nYour complaint has been submitted and will be reviewed by the admin team.`);
     }
 
-    if (command === "3") {
+    if (isStatusCheck) {
       // Show complaint status
       const { data: myComplaints, error: cErr } = await supabase
         .from("agent_complaints")
