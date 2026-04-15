@@ -72,6 +72,9 @@ const CORE_COMMANDS = [
   { keyword: "2", label: "View reporting person details", description: "2 or status" },
   { keyword: "3", label: "Show help message", description: "3, help, hi, hello" },
   { keyword: "4", label: "Check wallet balance", description: "4 or balance" },
+  { keyword: "5", label: "Work log absence report (all agents)", description: "5" },
+  { keyword: "6", label: "Coordinator absence report", description: "6 → select panchayath → report" },
+  { keyword: "7", label: "Group Leader absence report", description: "7 → select panchayath → report" },
 ];
 
 const emptyForm: CommandFormData = {
@@ -138,7 +141,7 @@ export default function WhatsAppCommands() {
       return;
     }
     // Block core keywords
-    const reserved = ["1", "2", "3", "4", "help", "hi", "hello", "status", "balance"];
+    const reserved = ["1", "2", "3", "4", "5", "6", "7", "help", "hi", "hello", "status", "balance"];
     if (!editingId && reserved.includes(form.keyword.trim().toLowerCase())) {
       toast({ title: "Reserved", description: "This keyword is reserved for core commands.", variant: "destructive" });
       return;

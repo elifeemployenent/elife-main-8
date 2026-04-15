@@ -19,7 +19,16 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
   Show this help message.
 
 4️⃣
-  Check your wallet balance.`;
+  Check your wallet balance.
+
+5️⃣
+  Today's work log absence report (all agents).
+
+6️⃣
+  Coordinator absence report (by panchayath).
+
+7️⃣
+  Group Leader absence report (by panchayath).`;
 
 function buildHelpText(customCommands: Array<{ keyword: string; label: string }>) {
   let help = CORE_HELP;
@@ -42,6 +51,78 @@ function twiml(msg: string) {
     `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(msg)}</Message></Response>`,
     { status: 200, headers: { ...corsHeaders, "Content-Type": "text/xml" } }
   );
+}
+
+const roleLabels: Record<string, string> = {
+  team_leader: "Team Leader",
+  coordinator: "Coordinator",
+  group_leader: "Group Leader",
+  pro: "PRO",
+  scode: "S-Code",
+};
+
+async function buildAbsenceReport(
+  supabase: ReturnType<typeof createClient>,
+  today: string,
+  roleFilter?: string,
+  panchayathId?: string,
+) {
+  let agentQuery = supabase
+    .from("pennyekart_agents")
+    .select("id, name, mobile, role, panchayath_id, ward, panchayath:panchayaths(name)")
+    .eq("is_active", true);
+
+  if (roleFilter) {
+    agentQuery = agentQuery.eq("role", roleFilter);
+  }
+  if (panchayathId) {
+    agentQuery = agentQuery.eq("panchayath_id", panchayathId);
+  }
+
+  const { data: agents, error: agentErr } = await agentQuery;
+  if (agentErr) throw agentErr;
+  if (!agents || agents.length === 0) return "No agents found for this filter.";
+
+  // Get today's logs for these agents
+  const agentIds = agents.map((a: any) => a.id);
+  const { data: logs } = await supabase
+    .from("agent_work_logs")
+    .select("agent_id")
+    .eq("work_date", today)
+    .in("agent_id", agentIds);
+
+  const submittedIds = new Set((logs || []).map((l: any) => l.agent_id));
+  const absent = agents.filter((a: any) => !submittedIds.has(a.id));
+  const submitted = agents.filter((a: any) => submittedIds.has(a.id));
+
+  const total = agents.length;
+  const submittedCount = submitted.length;
+  const absentCount = absent.length;
+  const rate = total > 0 ? Math.round((submittedCount / total) * 100) : 0;
+
+  let msg = `📊 *Work Log Report — ${today}*\n`;
+  if (roleFilter) msg += `🏷️ Role: ${roleLabels[roleFilter] || roleFilter}\n`;
+
+  const panchName = panchayathId && agents[0]?.panchayath?.name;
+  if (panchName) msg += `📍 Panchayath: ${panchName}\n`;
+
+  msg += `\n✅ Submitted: ${submittedCount}/${total} (${rate}%)\n❌ Absent: ${absentCount}\n`;
+
+  if (absentCount > 0) {
+    msg += `\n❌ *Absent Agents:*`;
+    for (const a of absent) {
+      msg += `\n• ${a.name} (${roleLabels[a.role] || a.role}) — ${a.mobile}`;
+    }
+  }
+
+  if (submittedCount > 0 && submittedCount <= 20) {
+    msg += `\n\n✅ *Submitted:*`;
+    for (const a of submitted) {
+      msg += `\n• ${a.name}`;
+    }
+  }
+
+  return msg;
 }
 
 Deno.serve(async (req) => {
@@ -108,15 +189,6 @@ Deno.serve(async (req) => {
 
     // --- COMMAND: 2 = reporting person details ---
     if (command === "2" || command.toLowerCase() === "status") {
-      const roleLabels: Record<string, string> = {
-        team_leader: "Team Leader",
-        coordinator: "Coordinator",
-        group_leader: "Group Leader",
-        pro: "PRO",
-        scode: "S-Code",
-      };
-
-      // Walk up the parent chain to collect reporting hierarchy
       const hierarchy: Array<{ name: string; mobile: string; role: string }> = [];
       let currentParentId = agent.parent_agent_id;
       let depth = 0;
@@ -209,6 +281,103 @@ Deno.serve(async (req) => {
       return twiml(`💰 *Wallet Balance*\n👤 ${agent.name}\n💳 Available Balance: ${formatted}`);
     }
 
+    // --- COMMAND: 5 = admin work log absence report (all agents) ---
+    if (command === "5") {
+      try {
+        const report = await buildAbsenceReport(supabase, today);
+        return twiml(report);
+      } catch (err) {
+        console.error("Command 5 error:", err);
+        return twiml("❌ Failed to generate absence report. Please try again.");
+      }
+    }
+
+    // --- COMMAND: 6 = coordinator absence report (panchayath selection) ---
+    // "6" alone → show panchayath list; "6 <number>" → show report
+    const cmd6Match = command.match(/^6\s+(\d+)$/);
+    if (command === "6") {
+      // Show panchayath list
+      const { data: panchayaths } = await supabase
+        .from("panchayaths")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (!panchayaths || panchayaths.length === 0) {
+        return twiml("No panchayaths found.");
+      }
+
+      let msg = `📍 *Select Panchayath for Coordinator Report*\n\nSend *6 <number>* to get the report:\n`;
+      panchayaths.forEach((p: any, i: number) => {
+        msg += `\n${i + 1}. ${p.name}`;
+      });
+      msg += `\n\nExample: _6 1_`;
+      return twiml(msg);
+    }
+    if (cmd6Match) {
+      const num = parseInt(cmd6Match[1], 10);
+      const { data: panchayaths } = await supabase
+        .from("panchayaths")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (!panchayaths || num < 1 || num > panchayaths.length) {
+        return twiml(`❌ Invalid selection. Send *6* to see the panchayath list.`);
+      }
+
+      const selected = panchayaths[num - 1];
+      try {
+        const report = await buildAbsenceReport(supabase, today, "coordinator", selected.id);
+        return twiml(report);
+      } catch (err) {
+        console.error("Command 6 error:", err);
+        return twiml("❌ Failed to generate coordinator report. Please try again.");
+      }
+    }
+
+    // --- COMMAND: 7 = group leader absence report (panchayath selection) ---
+    const cmd7Match = command.match(/^7\s+(\d+)$/);
+    if (command === "7") {
+      const { data: panchayaths } = await supabase
+        .from("panchayaths")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (!panchayaths || panchayaths.length === 0) {
+        return twiml("No panchayaths found.");
+      }
+
+      let msg = `📍 *Select Panchayath for Group Leader Report*\n\nSend *7 <number>* to get the report:\n`;
+      panchayaths.forEach((p: any, i: number) => {
+        msg += `\n${i + 1}. ${p.name}`;
+      });
+      msg += `\n\nExample: _7 1_`;
+      return twiml(msg);
+    }
+    if (cmd7Match) {
+      const num = parseInt(cmd7Match[1], 10);
+      const { data: panchayaths } = await supabase
+        .from("panchayaths")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (!panchayaths || num < 1 || num > panchayaths.length) {
+        return twiml(`❌ Invalid selection. Send *7* to see the panchayath list.`);
+      }
+
+      const selected = panchayaths[num - 1];
+      try {
+        const report = await buildAbsenceReport(supabase, today, "group_leader", selected.id);
+        return twiml(report);
+      } catch (err) {
+        console.error("Command 7 error:", err);
+        return twiml("❌ Failed to generate group leader report. Please try again.");
+      }
+    }
+
     // --- DYNAMIC CUSTOM COMMANDS ---
     const cmdLower = command.toLowerCase();
     for (const cc of activeCustom) {
@@ -218,7 +387,7 @@ Deno.serve(async (req) => {
     }
 
     // --- UNRECOGNIZED COMMAND ---
-    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — Reporting person details\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance`;
+    let fallback = `🤔 Sorry ${agent.name}, I didn't understand that.\n\n*Commands:*\n1️⃣ *1* <work details> — Submit work log\n2️⃣ *2* — Reporting person details\n3️⃣ *3* — Help\n4️⃣ *4* — Wallet balance\n5️⃣ *5* — Absence report\n6️⃣ *6* — Coordinator report\n7️⃣ *7* — Group Leader report`;
     for (const cc of activeCustom) {
       fallback += `\n${cc.keyword}️⃣ *${cc.keyword}* — ${cc.label}`;
     }
