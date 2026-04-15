@@ -15,8 +15,11 @@ const CORE_HELP = `📋 *PennyeKart Agent Commands*
 2️⃣
   View your reporting person details.
 
+3️⃣
+  View your complaint status.
+
 3️⃣ <your complaint>
-  Register a complaint.
+  Register a new complaint.
   Example: _3 Delivery not received for order #123_
 
 4️⃣
