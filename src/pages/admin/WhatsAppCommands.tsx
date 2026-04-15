@@ -70,11 +70,12 @@ interface CommandFormData {
 const CORE_COMMANDS = [
   { keyword: "1", label: "Submit daily work log", description: "1 <work details>" },
   { keyword: "2", label: "View reporting person details", description: "2 or status" },
-  { keyword: "3", label: "Show help message", description: "3, help, hi, hello" },
+  { keyword: "3", label: "Register a complaint", description: "3 <complaint details>" },
   { keyword: "4", label: "Check wallet balance", description: "4 or balance" },
   { keyword: "5", label: "Work log absence report (all agents)", description: "5" },
   { keyword: "6", label: "Coordinator absence report", description: "6 → select panchayath → report" },
   { keyword: "7", label: "Group Leader absence report", description: "7 → select panchayath → report" },
+  { keyword: "8", label: "Show help message", description: "8, help, hi, hello" },
 ];
 
 const emptyForm: CommandFormData = {
