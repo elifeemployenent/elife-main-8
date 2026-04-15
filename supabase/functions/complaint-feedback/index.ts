@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get complaint with agent details
     const { data: complaint, error: cErr } = await supabase
       .from("agent_complaints")
       .select("*, agent:pennyekart_agents(name, mobile)")
@@ -42,7 +41,6 @@ Deno.serve(async (req) => {
     const agentMobile = complaint.agent.mobile;
     const agentName = complaint.agent.name;
 
-    // Build feedback message
     const statusEmoji = status === "resolved" ? "✅" : status === "dismissed" ? "❌" : "⏳";
     const statusLabel = status === "resolved" ? "Resolved" : status === "dismissed" ? "Dismissed" : "Pending";
 
@@ -57,32 +55,40 @@ Deno.serve(async (req) => {
     message += `\n📅 Updated: ${new Date().toLocaleDateString("en-IN")}\n`;
     message += `\nThank you for your feedback. If you have any further concerns, send *3 <your message>*.`;
 
-    // Send via Twilio connector gateway
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Parse TWILIO_API_KEY in format ACCOUNT_SID:AUTH_TOKEN:FROM_NUMBER
     const twilioApiKey = Deno.env.get("TWILIO_API_KEY");
-
-    if (!lovableApiKey || !twilioApiKey) {
-      console.error("Missing LOVABLE_API_KEY or TWILIO_API_KEY");
+    if (!twilioApiKey) {
+      console.error("TWILIO_API_KEY not set");
       return new Response(
         JSON.stringify({ error: "Twilio not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const parts = twilioApiKey.split(":");
+    if (parts.length < 3) {
+      console.error("Invalid TWILIO_API_KEY format. Expected ACCOUNT_SID:AUTH_TOKEN:FROM_NUMBER, got", parts.length, "parts");
+      return new Response(
+        JSON.stringify({ error: "Invalid Twilio config. Set TWILIO_API_KEY as ACCOUNT_SID:AUTH_TOKEN:FROM_NUMBER" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const [accountSid, authToken, ...fromParts] = parts;
+    const fromNumber = fromParts.join(":");
     const toNumber = agentMobile.startsWith("+") ? agentMobile : `+91${agentMobile}`;
 
-    const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-    const twilioRes = await fetch(`${GATEWAY_URL}/Messages.json`, {
+    const twilioRes = await fetch(twilioUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${lovableApiKey}`,
-        "X-Connection-Api-Key": twilioApiKey,
+        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
+        From: `whatsapp:${fromNumber}`,
         To: `whatsapp:${toNumber}`,
-        From: `whatsapp:+14155238886`,
         Body: message,
       }).toString(),
     });
