@@ -141,7 +141,7 @@ export default function WhatsAppCommands() {
       return;
     }
     // Block core keywords
-    const reserved = ["1", "2", "3", "4", "help", "hi", "hello", "status", "balance"];
+    const reserved = ["1", "2", "3", "4", "5", "6", "7", "help", "hi", "hello", "status", "balance"];
     if (!editingId && reserved.includes(form.keyword.trim().toLowerCase())) {
       toast({ title: "Reserved", description: "This keyword is reserved for core commands.", variant: "destructive" });
       return;
