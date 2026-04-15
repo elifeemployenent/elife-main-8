@@ -55,6 +55,7 @@ import { ExportFilterDialog } from "@/components/pennyekart/ExportFilterDialog";
 import { toast } from "sonner";
 import { exportAgentsToXlsx, exportAgentsToPdf, shareAgentsViaWhatsApp } from "@/lib/exportAgents";
 import { AgentRanksTab } from "@/components/pennyekart/AgentRanksTab";
+import { AgentWorkLogReport } from "@/components/pennyekart/AgentWorkLogReport";
 
 interface Panchayath {
   id: string;
