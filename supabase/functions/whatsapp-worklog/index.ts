@@ -361,89 +361,77 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- COMMAND: 6 = coordinator absence report (panchayath selection) ---
-    // "6" alone → show panchayath list; "6 <number>" → show report
-    const cmd6Match = command.match(/^6\s+(\d+)$/);
-    if (command === "6") {
-      // Show panchayath list
+    // --- Helper: get panchayaths that have agents of a given role ---
+    async function getPanchayathsWithRole(role: string) {
+      const { data: agents } = await supabase
+        .from("pennyekart_agents")
+        .select("panchayath_id")
+        .eq("role", role)
+        .eq("is_active", true);
+      if (!agents || agents.length === 0) return [];
+      const uniqueIds = [...new Set(agents.map((a: any) => a.panchayath_id))];
       const { data: panchayaths } = await supabase
         .from("panchayaths")
         .select("id, name")
+        .in("id", uniqueIds)
         .eq("is_active", true)
         .order("name", { ascending: true });
+      return panchayaths || [];
+    }
 
-      if (!panchayaths || panchayaths.length === 0) {
-        return twiml("No panchayaths found.");
+    // --- COMMAND: 6 = coordinator absence report (panchayath selection) ---
+    const cmd6Match = command.match(/^6\s+(\d+)$/);
+    if (command === "6") {
+      const panchayaths = await getPanchayathsWithRole("coordinator");
+      if (panchayaths.length === 0) {
+        return twiml("No panchayaths with coordinators found.");
       }
-
-      let msg = `📍 *Select Panchayath for Coordinator Report*\n\nSend *6 <number>* to get the report:\n`;
+      let msg = `📍 *Coordinator Report*\nSend *6 <number>*:\n`;
       panchayaths.forEach((p: any, i: number) => {
         msg += `\n${i + 1}. ${p.name}`;
       });
-      msg += `\n\nExample: _6 1_`;
       return twiml(msg);
     }
     if (cmd6Match) {
       const num = parseInt(cmd6Match[1], 10);
-      const { data: panchayaths } = await supabase
-        .from("panchayaths")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-
-      if (!panchayaths || num < 1 || num > panchayaths.length) {
-        return twiml(`❌ Invalid selection. Send *6* to see the panchayath list.`);
+      const panchayaths = await getPanchayathsWithRole("coordinator");
+      if (num < 1 || num > panchayaths.length) {
+        return twiml(`❌ Invalid. Send *6* to see list.`);
       }
-
-      const selected = panchayaths[num - 1];
       try {
-        const report = await buildAbsenceReport(supabase, today, "coordinator", selected.id);
+        const report = await buildAbsenceReport(supabase, today, "coordinator", panchayaths[num - 1].id);
         return twiml(report);
       } catch (err) {
         console.error("Command 6 error:", err);
-        return twiml("❌ Failed to generate coordinator report. Please try again.");
+        return twiml("❌ Failed to generate coordinator report.");
       }
     }
 
     // --- COMMAND: 7 = group leader absence report (panchayath selection) ---
     const cmd7Match = command.match(/^7\s+(\d+)$/);
     if (command === "7") {
-      const { data: panchayaths } = await supabase
-        .from("panchayaths")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-
-      if (!panchayaths || panchayaths.length === 0) {
-        return twiml("No panchayaths found.");
+      const panchayaths = await getPanchayathsWithRole("group_leader");
+      if (panchayaths.length === 0) {
+        return twiml("No panchayaths with group leaders found.");
       }
-
-      let msg = `📍 *Select Panchayath for Group Leader Report*\n\nSend *7 <number>* to get the report:\n`;
+      let msg = `📍 *Group Leader Report*\nSend *7 <number>*:\n`;
       panchayaths.forEach((p: any, i: number) => {
         msg += `\n${i + 1}. ${p.name}`;
       });
-      msg += `\n\nExample: _7 1_`;
       return twiml(msg);
     }
     if (cmd7Match) {
       const num = parseInt(cmd7Match[1], 10);
-      const { data: panchayaths } = await supabase
-        .from("panchayaths")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-
-      if (!panchayaths || num < 1 || num > panchayaths.length) {
-        return twiml(`❌ Invalid selection. Send *7* to see the panchayath list.`);
+      const panchayaths = await getPanchayathsWithRole("group_leader");
+      if (num < 1 || num > panchayaths.length) {
+        return twiml(`❌ Invalid. Send *7* to see list.`);
       }
-
-      const selected = panchayaths[num - 1];
       try {
-        const report = await buildAbsenceReport(supabase, today, "group_leader", selected.id);
+        const report = await buildAbsenceReport(supabase, today, "group_leader", panchayaths[num - 1].id);
         return twiml(report);
       } catch (err) {
         console.error("Command 7 error:", err);
-        return twiml("❌ Failed to generate group leader report. Please try again.");
+        return twiml("❌ Failed to generate group leader report.");
       }
     }
 
