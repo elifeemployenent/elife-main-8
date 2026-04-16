@@ -115,22 +115,15 @@ async function buildAbsenceReport(
 
   msg += `\n✅ Submitted: ${submittedCount}/${total} (${rate}%)\n❌ Absent: ${absentCount}\n`;
 
-  const MAX_ABSENT_SHOW = 30;
+  const MAX_ABSENT_SHOW = 15;
   if (absentCount > 0) {
-    msg += `\n❌ *Absent Agents:*`;
+    msg += `\n❌ *Absent:*`;
     const showAbsent = absent.slice(0, MAX_ABSENT_SHOW);
     for (const a of showAbsent) {
-      msg += `\n• ${a.name} (${roleLabels[a.role] || a.role}) — ${a.mobile}`;
+      msg += `\n• ${a.name} — ${a.mobile}`;
     }
     if (absentCount > MAX_ABSENT_SHOW) {
-      msg += `\n\n... and ${absentCount - MAX_ABSENT_SHOW} more absent agents.`;
-    }
-  }
-
-  if (submittedCount > 0 && submittedCount <= 20) {
-    msg += `\n\n✅ *Submitted:*`;
-    for (const a of submitted) {
-      msg += `\n• ${a.name}`;
+      msg += `\n...+${absentCount - MAX_ABSENT_SHOW} more`;
     }
   }
 
