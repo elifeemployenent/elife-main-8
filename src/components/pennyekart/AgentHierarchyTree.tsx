@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2, Star, Trophy } from "lucide-react";
+import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2, Star, Trophy, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PennyekartAgent, ROLE_LABELS, AgentRole } from "@/hooks/usePennyekartAgents";
@@ -88,17 +88,41 @@ function PanchayathNode({ panchayathName, agents, onSelectAgent, selectedAgentId
       </button>
       
       {isExpanded && (
-        <div className="p-1.5 sm:p-2">
-          {rootAgents.map(agent => (
-            <AgentNode
-              key={agent.id}
-              agent={agent}
-              allAgents={agents}
-              depth={0}
-              onSelectAgent={onSelectAgent}
-              selectedAgentId={selectedAgentId}
-            />
-          ))}
+        <div className="p-1.5 sm:p-2 space-y-2">
+          {rootAgents.map(agent => {
+            const isScode = agent.role === "scode";
+            if (isScode) {
+              return (
+                <div key={agent.id} className="border border-rose-200 dark:border-rose-900/40 rounded-md overflow-hidden bg-rose-50/40 dark:bg-rose-950/10">
+                  <div className="flex items-center gap-2 px-2 py-1.5 bg-rose-100/70 dark:bg-rose-900/20 border-b border-rose-200 dark:border-rose-900/40">
+                    <Briefcase className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300 flex-shrink-0" />
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                      Area Office
+                    </span>
+                  </div>
+                  <div className="p-1">
+                    <AgentNode
+                      agent={agent}
+                      allAgents={agents}
+                      depth={0}
+                      onSelectAgent={onSelectAgent}
+                      selectedAgentId={selectedAgentId}
+                    />
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <AgentNode
+                key={agent.id}
+                agent={agent}
+                allAgents={agents}
+                depth={0}
+                onSelectAgent={onSelectAgent}
+                selectedAgentId={selectedAgentId}
+              />
+            );
+          })}
         </div>
       )}
     </div>
