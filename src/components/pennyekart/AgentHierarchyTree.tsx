@@ -119,6 +119,66 @@ function PanchayathNode({ panchayathName, agents, onSelectAgent, selectedAgentId
   );
 }
 
+interface ScodeAreaOfficeCardProps {
+  agent: PennyekartAgent;
+  allAgents: PennyekartAgent[];
+  onSelectAgent: (agent: PennyekartAgent) => void;
+  selectedAgentId?: string;
+}
+
+function ScodeAreaOfficeCard({ agent, allAgents, onSelectAgent, selectedAgentId }: ScodeAreaOfficeCardProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  const totalCustomers = calculateTotalCustomers(agent, allAgents);
+  const childCount = allAgents.filter(a => a.parent_agent_id === agent.id).length;
+
+  return (
+    <div className="rounded-xl overflow-hidden shadow-sm border border-rose-200 dark:border-rose-900/40 bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 dark:from-rose-950/20 dark:via-orange-950/20 dark:to-amber-950/20">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 hover:from-rose-600 hover:via-pink-600 hover:to-orange-600 transition-all"
+      >
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4 text-white flex-shrink-0" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-white flex-shrink-0" />
+        )}
+        <Briefcase className="h-4 w-4 text-white flex-shrink-0" />
+        <div className="flex flex-col items-start flex-1 min-w-0">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white/90">
+            Area Office
+          </span>
+          <span className="text-xs sm:text-sm font-bold text-white truncate max-w-full">
+            {agent.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Badge className="text-[10px] px-1.5 py-0 bg-white/25 text-white border-0 hover:bg-white/30">
+            <Users className="h-2.5 w-2.5 mr-0.5" />
+            {childCount}
+          </Badge>
+          {totalCustomers > 0 && (
+            <Badge className="text-[10px] px-1.5 py-0 bg-white/25 text-white border-0 hover:bg-white/30">
+              <Trophy className="h-2.5 w-2.5 mr-0.5" />
+              {totalCustomers}
+            </Badge>
+          )}
+        </div>
+      </button>
+      {isOpen && (
+        <div className="p-1.5 sm:p-2">
+          <AgentNode
+            agent={agent}
+            allAgents={allAgents}
+            depth={0}
+            onSelectAgent={onSelectAgent}
+            selectedAgentId={selectedAgentId}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface AgentNodeProps {
   agent: PennyekartAgent;
   allAgents: PennyekartAgent[];
