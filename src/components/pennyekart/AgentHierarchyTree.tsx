@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2, Star, Trophy } from "lucide-react";
+import { ChevronRight, ChevronDown, Users, User, Phone, MapPin, Building2, Star, Trophy, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PennyekartAgent, ROLE_LABELS, AgentRole } from "@/hooks/usePennyekartAgents";
