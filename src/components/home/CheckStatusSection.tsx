@@ -312,6 +312,12 @@ export function CheckStatusSection() {
           </div>
         )}
       </div>
+
+      <PublicAgentRegisterDialog
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+        defaultMobile={mobile.replace(/\D/g, "").slice(0, 10)}
+      />
     </section>
   );
 }
