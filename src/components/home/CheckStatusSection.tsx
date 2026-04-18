@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentWorkLog } from "./AgentWorkLog";
+import { PublicAgentRegisterDialog } from "./PublicAgentRegisterDialog";
+import { useEffect } from "react";
 
 interface CollectionResult {
   id: string;
