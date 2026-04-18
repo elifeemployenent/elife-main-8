@@ -336,6 +336,10 @@ export default function PennyekartAgentHierarchy() {
               <Users className="h-4 w-4" />
               Hierarchy
             </TabsTrigger>
+            <TabsTrigger value="top-team" className="gap-1.5">
+              <Trophy className="h-4 w-4 text-rose-500" />
+              Top Level Team
+            </TabsTrigger>
             <TabsTrigger value="ranks" className="gap-1.5">
               <Trophy className="h-4 w-4" />
               Agent Ranks
@@ -350,16 +354,30 @@ export default function PennyekartAgentHierarchy() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
-            {/* S-Code Leaders - Profile Cards */}
+          <TabsContent value="top-team" className="space-y-4 sm:space-y-6">
             {(() => {
               const scodeAgents = agents.filter(a => a.role === "scode");
-              if (scodeAgents.length === 0) return null;
+              if (isLoading) {
+                return (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                );
+              }
+              if (scodeAgents.length === 0) {
+                return (
+                  <Card>
+                    <CardContent className="py-10 text-center text-muted-foreground text-sm">
+                      No top-level team members found.
+                    </CardContent>
+                  </Card>
+                );
+              }
               return (
                 <div>
                   <h2 className="text-sm sm:text-base font-semibold mb-3 flex items-center gap-2">
                     <Users className="h-4 w-4 text-rose-500" />
-                    S-Code Leaders
+                    Top Level Team ({scodeAgents.length})
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {scodeAgents.map(agent => (
@@ -376,6 +394,9 @@ export default function PennyekartAgentHierarchy() {
                 </div>
               );
             })()}
+          </TabsContent>
+
+          <TabsContent value="hierarchy" className="space-y-4 sm:space-y-6">
 
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
