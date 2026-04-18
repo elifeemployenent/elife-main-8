@@ -33,6 +33,7 @@ import SalesReport from "./pages/admin/SalesReport";
 import Payouts from "./pages/admin/Payouts";
 import AgentTasks from "./pages/admin/AgentTasks";
 import WhatsAppCommands from "./pages/admin/WhatsAppCommands";
+import RegisterAgent from "./pages/RegisterAgent";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/register-agent" element={<RegisterAgent />} />
 
             {/* Protected routes - Dashboard redirect */}
             <Route
