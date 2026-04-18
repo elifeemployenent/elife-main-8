@@ -197,7 +197,10 @@ export function CheckStatusSection() {
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <XCircle className="h-10 w-10 mx-auto mb-3 opacity-40" />
                   <p className="font-medium">No records found</p>
-                  <p className="text-sm">No payment records or agent details found for this mobile number</p>
+                  <p className="text-sm mb-4">No payment records or agent details found for this mobile number</p>
+                  <Button onClick={() => setRegisterOpen(true)} size="sm">
+                    Register as Agent
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
