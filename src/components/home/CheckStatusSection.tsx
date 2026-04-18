@@ -139,6 +139,13 @@ export function CheckStatusSection() {
 
   const hasResults = collections.length > 0 || oldPayments.length > 0 || agentInfo;
 
+  // Auto-open registration when no records found
+  useEffect(() => {
+    if (searched && !isSearching && !hasResults) {
+      setRegisterOpen(true);
+    }
+  }, [searched, isSearching, hasResults]);
+
   return (
     <section className="py-12 lg:py-16 bg-muted/30">
       <div className="container mx-auto px-4 max-w-2xl">
