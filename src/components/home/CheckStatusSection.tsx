@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentWorkLog } from "./AgentWorkLog";
+import { PublicAgentRegisterDialog } from "./PublicAgentRegisterDialog";
+import { useEffect } from "react";
 
 interface CollectionResult {
   id: string;
@@ -61,6 +63,7 @@ export function CheckStatusSection() {
   const [oldPayments, setOldPayments] = useState<OldPaymentResult[]>([]);
   const [agentInfo, setAgentInfo] = useState<AgentResult | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const handleSearch = async () => {
     const cleaned = mobile.replace(/\D/g, "");
     if (cleaned.length < 10) return;
@@ -136,6 +139,13 @@ export function CheckStatusSection() {
 
   const hasResults = collections.length > 0 || oldPayments.length > 0 || agentInfo;
 
+  // Auto-open registration when no records found
+  useEffect(() => {
+    if (searched && !isSearching && !hasResults) {
+      setRegisterOpen(true);
+    }
+  }, [searched, isSearching, hasResults]);
+
   return (
     <section className="py-12 lg:py-16 bg-muted/30">
       <div className="container mx-auto px-4 max-w-2xl">
@@ -187,7 +197,10 @@ export function CheckStatusSection() {
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <XCircle className="h-10 w-10 mx-auto mb-3 opacity-40" />
                   <p className="font-medium">No records found</p>
-                  <p className="text-sm">No payment records or agent details found for this mobile number</p>
+                  <p className="text-sm mb-4">No payment records or agent details found for this mobile number</p>
+                  <Button onClick={() => setRegisterOpen(true)} size="sm">
+                    Register as Agent
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -299,6 +312,12 @@ export function CheckStatusSection() {
           </div>
         )}
       </div>
+
+      <PublicAgentRegisterDialog
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+        defaultMobile={mobile.replace(/\D/g, "").slice(0, 10)}
+      />
     </section>
   );
 }
