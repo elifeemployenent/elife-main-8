@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Phone, CheckCircle2, XCircle, Loader2, IndianRupee, User, MapPin, Building2, Users, Wallet } from "lucide-react";
+import { Search, Phone, CheckCircle2, XCircle, Loader2, IndianRupee, User, MapPin, Building2, Users, Wallet, Share2, Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,6 +157,42 @@ export function CheckStatusSection() {
           <p className="text-muted-foreground text-sm lg:text-base">
             Enter your mobile number to check your cash collection status and agent details
           </p>
+
+          {/* Share Agent Registration Link */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/register-agent`;
+                const text = `Join e-Life as an Agent! Register here: ${url}`;
+                window.open(
+                  `https://wa.me/?text=${encodeURIComponent(text)}`,
+                  "_blank",
+                  "noopener"
+                );
+              }}
+            >
+              <Share2 className="h-4 w-4 mr-1.5" />
+              Share Agent Registration
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                const url = `${window.location.origin}/register-agent`;
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast({ title: "Link copied", description: url });
+                } catch {
+                  toast({ title: "Copy failed", variant: "destructive" });
+                }
+              }}
+            >
+              <Copy className="h-4 w-4 mr-1.5" />
+              Copy Link
+            </Button>
+          </div>
         </div>
 
         {/* Search Input */}
