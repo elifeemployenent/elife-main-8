@@ -33,6 +33,7 @@ import SalesReport from "./pages/admin/SalesReport";
 import Payouts from "./pages/admin/Payouts";
 import AgentTasks from "./pages/admin/AgentTasks";
 import WhatsAppCommands from "./pages/admin/WhatsAppCommands";
+import DepartmentsManagement from "./pages/admin/DepartmentsManagement";
 import RegisterAgent from "./pages/RegisterAgent";
 
 const queryClient = new QueryClient();
