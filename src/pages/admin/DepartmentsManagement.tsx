@@ -280,3 +280,77 @@ export default function DepartmentsManagement() {
     </Layout>
   );
 }
+
+function ActivityList({ type, items, departments, members, agentMap, filterDept, setFilterDept, onDelete }: {
+  type: "logs" | "plans" | "todos";
+  items: any[];
+  departments: Department[];
+  members: Member[];
+  agentMap: Map<string, Agent>;
+  filterDept: string;
+  setFilterDept: (v: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const filtered = items.filter((i) => filterDept === "all" || i.department_id === filterDept);
+  const deptMap = new Map(departments.map((d) => [d.id, d]));
+  const memberMap = new Map(members.map((m) => [m.id, m]));
+  const empty = type === "logs" ? "No work logs" : type === "plans" ? "No plans" : "No todos";
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Label className="text-sm">Department:</Label>
+        <Select value={filterDept} onValueChange={setFilterDept}>
+          <SelectTrigger className="h-9 flex-1 max-w-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All departments</SelectItem>
+            {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {filtered.length === 0 ? (
+        <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">{empty}</CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((item) => {
+            const d = deptMap.get(item.department_id);
+            const member = type === "logs" ? memberMap.get(item.member_id) : null;
+            const a = member ? agentMap.get(member.agent_id) : null;
+            return (
+              <Card key={item.id}>
+                <CardContent className="pt-3 pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <Badge variant="outline" className="text-[10px]" style={d?.color ? { borderColor: d.color, color: d.color } : undefined}>{d?.name || "—"}</Badge>
+                        {type === "logs" && <span className="text-xs text-muted-foreground">{new Date(item.work_date).toLocaleDateString("en-IN")}</span>}
+                        {type === "plans" && <Badge variant="secondary" className="text-[10px] capitalize">{String(item.status).replace("_", " ")}</Badge>}
+                        {type === "plans" && item.target_date && <span className="text-xs text-muted-foreground">🎯 {new Date(item.target_date).toLocaleDateString("en-IN")}</span>}
+                        {type === "todos" && <Badge variant={item.is_completed ? "default" : "secondary"} className="text-[10px]">{item.is_completed ? "Done" : "Pending"}</Badge>}
+                        {type === "todos" && item.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(item.due_date).toLocaleDateString("en-IN")}</span>}
+                      </div>
+                      {type === "logs" ? (
+                        <>
+                          <p className="text-xs text-muted-foreground mb-1">{a?.name || "Member"}</p>
+                          <p className="text-sm whitespace-pre-wrap">{item.work_details}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className={`text-sm font-medium ${type === "todos" && item.is_completed ? "line-through" : ""}`}>{item.title}</p>
+                          {item.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-0.5">{item.description}</p>}
+                        </>
+                      )}
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onDelete(item.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
