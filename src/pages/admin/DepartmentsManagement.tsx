@@ -28,22 +28,32 @@ export default function DepartmentsManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [deptDialog, setDeptDialog] = useState<{ open: boolean; data?: Partial<Department> }>({ open: false });
   const [memberDialog, setMemberDialog] = useState<{ open: boolean; deptId?: string; memberId?: string; agentId?: string; pin?: string; role?: string }>({ open: false });
+  const [filterDept, setFilterDept] = useState<string>("all");
 
   if (!isSuperAdmin) return <Navigate to="/unauthorized" replace />;
 
   const load = async () => {
     setLoading(true);
-    const [d, m, a] = await Promise.all([
+    const [d, m, a, l, p, t] = await Promise.all([
       supabase.from("departments").select("*").order("created_at"),
       supabase.from("department_members").select("id, department_id, agent_id, member_role, is_active, created_at, updated_at"),
       supabase.from("pennyekart_agents").select("id, name, mobile, role").eq("is_active", true).order("name"),
+      supabase.from("department_work_logs").select("*").order("work_date", { ascending: false }).limit(500),
+      supabase.from("department_plans").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("department_todos").select("*").order("is_completed").order("created_at", { ascending: false }).limit(500),
     ]);
     setDepartments((d.data as Department[]) || []);
     setMembers((m.data as Member[]) || []);
     setAgents((a.data as Agent[]) || []);
+    setLogs((l.data as Log[]) || []);
+    setPlans((p.data as Plan[]) || []);
+    setTodos((t.data as Todo[]) || []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
