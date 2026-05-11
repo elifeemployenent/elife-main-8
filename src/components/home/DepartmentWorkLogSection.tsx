@@ -179,21 +179,25 @@ export function DepartmentWorkLogSection() {
   };
 
   const filterMatch = (deptId: string) => filterDept === "all" || deptId === filterDept;
-  const visibleLogs = logs.filter((l) => filterMatch(l.department_id));
+  const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && (!filterDate || l.work_date === filterDate));
   const visiblePlans = plans.filter((p) => filterMatch(p.department_id));
   const visibleTodos = todos.filter((t) => filterMatch(t.department_id));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const deptMap = new Map(departments.map((d) => [d.id, d]));
+  const deptIds = [...deptMap.keys()];
   const today = new Date().toISOString().slice(0, 10);
+  const colorFor = (deptId: string) => deptMap.get(deptId)?.color || PALETTE[Math.max(0, deptIds.indexOf(deptId)) % PALETTE.length];
 
   const DeptBadge = ({ deptId }: { deptId: string }) => {
     const d = deptMap.get(deptId);
+    const c = colorFor(deptId);
     return (
-      <Badge variant="outline" className="text-[10px]" style={d?.color ? { borderColor: d.color, color: d.color } : undefined}>
+      <Badge className="text-[10px] border" style={{ backgroundColor: `${c}25`, color: c, borderColor: `${c}55` }}>
         {d?.name || "Department"}
       </Badge>
     );
   };
+  const cardStyle = (deptId: string) => ({ borderLeftColor: colorFor(deptId), backgroundColor: `${colorFor(deptId)}10` });
 
   return (
     <section className="py-12 lg:py-16 bg-background">
