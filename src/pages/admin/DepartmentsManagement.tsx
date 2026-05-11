@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -250,14 +251,16 @@ export default function DepartmentsManagement() {
             <div className="space-y-3">
               <div>
                 <Label>Agent *</Label>
-                <Select value={memberDialog.agentId} onValueChange={(v) => setMemberDialog({ ...memberDialog, agentId: v })} disabled={!!memberDialog.memberId}>
-                  <SelectTrigger><SelectValue placeholder="Select agent from hierarchy" /></SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {agents.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name} — {a.mobile} ({a.role.replace(/_/g, " ")})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={agents.map((a) => ({ value: a.id, label: `${a.name} — ${a.mobile} (${a.role.replace(/_/g, " ")})` }))}
+                  value={memberDialog.agentId || ""}
+                  onValueChange={(v) => setMemberDialog({ ...memberDialog, agentId: v })}
+                  disabled={!!memberDialog.memberId}
+                  placeholder="Select agent from hierarchy"
+                  searchPlaceholder="Search by name or mobile..."
+                  emptyText="No agents found."
+                />
+
               </div>
               <div>
                 <Label>Role in department</Label>
