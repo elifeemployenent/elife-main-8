@@ -268,7 +268,7 @@ export function DepartmentWorkLogSection() {
                 const a = m ? agents.get(m.agent_id) : null;
                 const canEdit = canEditDept(log.department_id);
                 return (
-                  <Card key={log.id}>
+                  <Card key={log.id} className="border-l-4 overflow-hidden" style={cardStyle(log.department_id)}>
                     <CardContent className="pt-4">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="min-w-0">
