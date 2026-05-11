@@ -365,7 +365,7 @@ export function DepartmentWorkLogSection() {
               ) : visibleTodos.map((todo) => {
                 const canEdit = canEditDept(todo.department_id);
                 return (
-                  <Card key={todo.id} className={todo.is_completed ? "opacity-60" : ""}>
+                  <Card key={todo.id} className={`border-l-4 overflow-hidden ${todo.is_completed ? "opacity-60" : ""}`} style={cardStyle(todo.department_id)}>
                     <CardContent className="pt-4">
                       <div className="flex items-start gap-3">
                         <Checkbox checked={todo.is_completed} disabled={!canEdit} onCheckedChange={() => toggleTodo(todo)} className="mt-0.5" />
