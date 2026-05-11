@@ -11,7 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Pencil, Trash2, LogIn, LogOut, Loader2, FileText, Target, ListTodo } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, LogIn, LogOut, Loader2, FileText, Target, ListTodo, Calendar as CalendarIcon } from "lucide-react";
+
+const STATUS_STYLE: Record<string, string> = {
+  planning: "bg-blue-500/15 text-blue-700 border-blue-500/40 dark:text-blue-300",
+  in_progress: "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-300",
+  completed: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-300",
+  on_hold: "bg-rose-500/15 text-rose-700 border-rose-500/40 dark:text-rose-300",
+};
+const PALETTE = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
 type Dept = { id: string; name: string; description: string | null; color: string | null };
 type Member = { id: string; agent_id: string; department_id: string; member_role: string };
