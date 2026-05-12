@@ -384,7 +384,7 @@ export function DepartmentWorkLogSection() {
               : visibleTodos.length === 0 ? (
                 <Card><CardContent className="py-10 text-center text-muted-foreground"><ListTodo className="h-10 w-10 mx-auto mb-2 opacity-40" />No todos yet</CardContent></Card>
               ) : visibleTodos.map((todo) => {
-                const canEdit = canEditDept(todo.department_id);
+                const canEdit = canEditItem(todo.created_by_member_id);
                 return (
                   <Card key={todo.id} className={`border-l-4 overflow-hidden ${todo.is_completed ? "opacity-60" : ""}`} style={cardStyle(todo.department_id)}>
                     <CardContent className="pt-4">
@@ -394,13 +394,15 @@ export function DepartmentWorkLogSection() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <DeptBadge deptId={todo.department_id} />
                             {todo.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(todo.due_date).toLocaleDateString("en-IN")}</span>}
+                            {!todo.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className={`text-sm font-medium ${todo.is_completed ? "line-through" : ""}`}>{todo.title}</p>
                           {todo.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{todo.description}</p>}
                         </div>
                         {canEdit && (
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTodoDialog({ open: true, id: todo.id, deptId: todo.department_id, title: todo.title, description: todo.description || "", due_date: todo.due_date || "" })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <div className="flex gap-1 items-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title={todo.is_public ? "Make private" : "Make public"} onClick={() => toggleTodoPublic(todo)}>{todo.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTodoDialog({ open: true, id: todo.id, deptId: todo.department_id, title: todo.title, description: todo.description || "", due_date: todo.due_date || "", is_public: todo.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteTodo(todo.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
