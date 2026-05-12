@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Pencil, Trash2, LogIn, LogOut, Loader2, FileText, Target, ListTodo, Calendar as CalendarIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Building2, Plus, Pencil, Trash2, LogIn, LogOut, Loader2, FileText, Target, ListTodo, Calendar as CalendarIcon, Eye, EyeOff } from "lucide-react";
 
 const STATUS_STYLE: Record<string, string> = {
   planning: "bg-blue-500/15 text-blue-700 border-blue-500/40 dark:text-blue-300",
@@ -24,9 +25,9 @@ const PALETTE = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899
 type Dept = { id: string; name: string; description: string | null; color: string | null };
 type Member = { id: string; agent_id: string; department_id: string; member_role: string };
 type Agent = { id: string; name: string; mobile: string };
-type Log = { id: string; member_id: string; department_id: string; work_date: string; work_details: string; created_at: string };
-type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; created_at: string };
-type Todo = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; is_completed: boolean; completed_at: string | null; created_at: string };
+type Log = { id: string; member_id: string; department_id: string; work_date: string; work_details: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
+type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
+type Todo = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; is_completed: boolean; completed_at: string | null; created_at: string; created_by_member_id: string | null; is_public: boolean };
 
 interface Membership { member_id: string; department_id: string; member_role: string; department: Dept }
 interface Session { token: string; agent: Agent; memberships: Membership[] }
@@ -55,9 +56,9 @@ export function DepartmentWorkLogSection() {
   const [loginPin, setLoginPin] = useState("");
   const [logging, setLogging] = useState(false);
 
-  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; details?: string; date?: string }>({ open: false });
-  const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string }>({ open: false });
-  const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string }>({ open: false });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
+  const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string; is_public?: boolean }>({ open: false });
+  const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string; is_public?: boolean }>({ open: false });
 
   const loadAll = async () => {
     setLoading(true);
@@ -112,7 +113,9 @@ export function DepartmentWorkLogSection() {
   };
 
   const myDeptIds = new Set(session?.memberships.map((m) => m.department_id) || []);
+  const myMemberIds = new Set(session?.memberships.map((m) => m.member_id) || []);
   const canEditDept = (deptId: string) => !!session && myDeptIds.has(deptId);
+  const canEditItem = (creatorId: string | null | undefined) => !!creatorId && myMemberIds.has(creatorId);
 
   const callFn = async (body: any) => {
     const { data, error } = await supabase.functions.invoke("department-worklog", { body: { ...body, token: session?.token } });
@@ -129,12 +132,16 @@ export function DepartmentWorkLogSection() {
     const ok = await callFn({
       action: logDialog.id ? "update_log" : "create_log",
       id: logDialog.id, member_id: logDialog.memberId, work_details: details, work_date: logDialog.date,
+      is_public: logDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setLogDialog({ open: false }); loadAll(); }
   };
   const deleteLog = async (id: string) => {
     if (!confirm("Delete this log?")) return;
     if (await callFn({ action: "delete_log", id })) loadAll();
+  };
+  const toggleLogPublic = async (log: Log) => {
+    if (await callFn({ action: "update_log", id: log.id, is_public: !log.is_public })) loadAll();
   };
 
   const savePlan = async () => {
@@ -145,11 +152,12 @@ export function DepartmentWorkLogSection() {
       id: planDialog.id, department_id: planDialog.deptId,
       title, description: planDialog.description || null,
       target_date: planDialog.target_date || null, status: planDialog.status || "planning",
+      is_public: planDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setPlanDialog({ open: false }); loadAll(); }
   };
   const cyclePlanStatus = async (plan: Plan) => {
-    if (!canEditDept(plan.department_id)) return;
+    if (!canEditItem(plan.created_by_member_id)) return;
     const idx = PLAN_STATUSES.indexOf(plan.status as any);
     const next = PLAN_STATUSES[(idx + 1) % PLAN_STATUSES.length];
     if (await callFn({ action: "update_plan", id: plan.id, status: next })) loadAll();
@@ -157,6 +165,9 @@ export function DepartmentWorkLogSection() {
   const deletePlan = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
     if (await callFn({ action: "delete_plan", id })) loadAll();
+  };
+  const togglePlanPublic = async (plan: Plan) => {
+    if (await callFn({ action: "update_plan", id: plan.id, is_public: !plan.is_public })) loadAll();
   };
 
   const saveTodo = async () => {
@@ -166,22 +177,28 @@ export function DepartmentWorkLogSection() {
       action: todoDialog.id ? "update_todo" : "create_todo",
       id: todoDialog.id, department_id: todoDialog.deptId,
       title, description: todoDialog.description || null, due_date: todoDialog.due_date || null,
+      is_public: todoDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setTodoDialog({ open: false }); loadAll(); }
   };
   const toggleTodo = async (todo: Todo) => {
-    if (!canEditDept(todo.department_id)) return;
+    if (!canEditItem(todo.created_by_member_id)) return;
     if (await callFn({ action: "update_todo", id: todo.id, is_completed: !todo.is_completed })) loadAll();
   };
   const deleteTodo = async (id: string) => {
     if (!confirm("Delete this todo?")) return;
     if (await callFn({ action: "delete_todo", id })) loadAll();
   };
+  const toggleTodoPublic = async (todo: Todo) => {
+    if (await callFn({ action: "update_todo", id: todo.id, is_public: !todo.is_public })) loadAll();
+  };
 
   const filterMatch = (deptId: string) => filterDept === "all" || deptId === filterDept;
-  const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && (!filterDate || l.work_date === filterDate));
-  const visiblePlans = plans.filter((p) => filterMatch(p.department_id));
-  const visibleTodos = todos.filter((t) => filterMatch(t.department_id));
+  const isVisible = (item: { is_public: boolean; created_by_member_id: string | null }) =>
+    item.is_public || canEditItem(item.created_by_member_id);
+  const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && isVisible(l) && (!filterDate || l.work_date === filterDate));
+  const visiblePlans = plans.filter((p) => filterMatch(p.department_id) && isVisible(p));
+  const visibleTodos = todos.filter((t) => filterMatch(t.department_id) && isVisible(t));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const deptMap = new Map(departments.map((d) => [d.id, d]));
   const deptIds = [...deptMap.keys()];
@@ -253,7 +270,7 @@ export function DepartmentWorkLogSection() {
                 <CardHeader className="pb-3"><CardTitle className="text-base">Post a work log</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {session.memberships.map((m) => (
-                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, date: today, details: "" })}>
+                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, date: today, details: "", is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
                   ))}
@@ -266,7 +283,7 @@ export function DepartmentWorkLogSection() {
               ) : visibleLogs.map((log) => {
                 const m = memberMap.get(log.member_id);
                 const a = m ? agents.get(m.agent_id) : null;
-                const canEdit = canEditDept(log.department_id);
+                const canEdit = canEditItem(log.created_by_member_id || log.member_id);
                 return (
                   <Card key={log.id} className="border-l-4 overflow-hidden" style={cardStyle(log.department_id)}>
                     <CardContent className="pt-4">
@@ -275,12 +292,14 @@ export function DepartmentWorkLogSection() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <DeptBadge deptId={log.department_id} />
                             <span className="text-xs text-muted-foreground">{new Date(log.work_date).toLocaleDateString("en-IN")}</span>
+                            {!log.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className="text-sm font-medium mt-1">{a?.name || "Member"}</p>
                         </div>
                         {canEdit && (
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setLogDialog({ open: true, id: log.id, memberId: log.member_id, details: log.work_details, date: log.work_date })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <div className="flex gap-1 items-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title={log.is_public ? "Make private" : "Make public"} onClick={() => toggleLogPublic(log)}>{log.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setLogDialog({ open: true, id: log.id, memberId: log.member_id, details: log.work_details, date: log.work_date, is_public: log.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteLog(log.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
@@ -299,7 +318,7 @@ export function DepartmentWorkLogSection() {
                 <CardHeader className="pb-3"><CardTitle className="text-base">Add a plan</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {session.memberships.map((m) => (
-                    <Button key={m.member_id} size="sm" onClick={() => setPlanDialog({ open: true, deptId: m.department_id, status: "planning" })}>
+                    <Button key={m.member_id} size="sm" onClick={() => setPlanDialog({ open: true, deptId: m.department_id, status: "planning", is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
                   ))}
@@ -310,7 +329,7 @@ export function DepartmentWorkLogSection() {
               : visiblePlans.length === 0 ? (
                 <Card><CardContent className="py-10 text-center text-muted-foreground"><Target className="h-10 w-10 mx-auto mb-2 opacity-40" />No plans yet</CardContent></Card>
               ) : visiblePlans.map((plan) => {
-                const canEdit = canEditDept(plan.department_id);
+                const canEdit = canEditItem(plan.created_by_member_id);
                 return (
                   <Card key={plan.id} className="border-l-4 overflow-hidden" style={cardStyle(plan.department_id)}>
                     <CardContent className="pt-4">
@@ -328,13 +347,15 @@ export function DepartmentWorkLogSection() {
                               {plan.status.replace("_", " ")}
                             </button>
                             {plan.target_date && <span className="text-xs text-muted-foreground">🎯 {new Date(plan.target_date).toLocaleDateString("en-IN")}</span>}
+                            {!plan.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className="font-semibold text-sm">{plan.title}</p>
                           {plan.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{plan.description}</p>}
                         </div>
                         {canEdit && (
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <div className="flex gap-1 items-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title={plan.is_public ? "Make private" : "Make public"} onClick={() => togglePlanPublic(plan)}>{plan.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status, is_public: plan.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deletePlan(plan.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
@@ -352,7 +373,7 @@ export function DepartmentWorkLogSection() {
                 <CardHeader className="pb-3"><CardTitle className="text-base">Add a todo</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {session.memberships.map((m) => (
-                    <Button key={m.member_id} size="sm" onClick={() => setTodoDialog({ open: true, deptId: m.department_id })}>
+                    <Button key={m.member_id} size="sm" onClick={() => setTodoDialog({ open: true, deptId: m.department_id, is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
                   ))}
@@ -363,7 +384,7 @@ export function DepartmentWorkLogSection() {
               : visibleTodos.length === 0 ? (
                 <Card><CardContent className="py-10 text-center text-muted-foreground"><ListTodo className="h-10 w-10 mx-auto mb-2 opacity-40" />No todos yet</CardContent></Card>
               ) : visibleTodos.map((todo) => {
-                const canEdit = canEditDept(todo.department_id);
+                const canEdit = canEditItem(todo.created_by_member_id);
                 return (
                   <Card key={todo.id} className={`border-l-4 overflow-hidden ${todo.is_completed ? "opacity-60" : ""}`} style={cardStyle(todo.department_id)}>
                     <CardContent className="pt-4">
@@ -373,13 +394,15 @@ export function DepartmentWorkLogSection() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <DeptBadge deptId={todo.department_id} />
                             {todo.due_date && <span className="text-xs text-muted-foreground">📅 {new Date(todo.due_date).toLocaleDateString("en-IN")}</span>}
+                            {!todo.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className={`text-sm font-medium ${todo.is_completed ? "line-through" : ""}`}>{todo.title}</p>
                           {todo.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{todo.description}</p>}
                         </div>
                         {canEdit && (
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTodoDialog({ open: true, id: todo.id, deptId: todo.department_id, title: todo.title, description: todo.description || "", due_date: todo.due_date || "" })}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <div className="flex gap-1 items-center">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title={todo.is_public ? "Make private" : "Make public"} onClick={() => toggleTodoPublic(todo)}>{todo.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTodoDialog({ open: true, id: todo.id, deptId: todo.department_id, title: todo.title, description: todo.description || "", due_date: todo.due_date || "", is_public: todo.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteTodo(todo.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
@@ -414,6 +437,7 @@ export function DepartmentWorkLogSection() {
           <div className="space-y-3">
             <div><Label>Date</Label><Input type="date" value={logDialog.date || today} onChange={(e) => setLogDialog({ ...logDialog, date: e.target.value })} disabled={!!logDialog.id} /></div>
             <div><Label>Work details</Label><Textarea rows={5} value={logDialog.details || ""} onChange={(e) => setLogDialog({ ...logDialog, details: e.target.value })} /></div>
+            <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{logDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={logDialog.is_public !== false} onCheckedChange={(c) => setLogDialog({ ...logDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setLogDialog({ open: false })}>Cancel</Button><Button onClick={saveLog}>Save</Button></DialogFooter>
         </DialogContent>
@@ -436,6 +460,7 @@ export function DepartmentWorkLogSection() {
                 </Select>
               </div>
             </div>
+            <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{planDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={planDialog.is_public !== false} onCheckedChange={(c) => setPlanDialog({ ...planDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setPlanDialog({ open: false })}>Cancel</Button><Button onClick={savePlan}>Save</Button></DialogFooter>
         </DialogContent>
@@ -449,6 +474,7 @@ export function DepartmentWorkLogSection() {
             <div><Label>Title *</Label><Input value={todoDialog.title || ""} onChange={(e) => setTodoDialog({ ...todoDialog, title: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea rows={3} value={todoDialog.description || ""} onChange={(e) => setTodoDialog({ ...todoDialog, description: e.target.value })} /></div>
             <div><Label>Due date</Label><Input type="date" value={todoDialog.due_date || ""} onChange={(e) => setTodoDialog({ ...todoDialog, due_date: e.target.value })} /></div>
+            <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{todoDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={todoDialog.is_public !== false} onCheckedChange={(c) => setTodoDialog({ ...todoDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setTodoDialog({ open: false })}>Cancel</Button><Button onClick={saveTodo}>Save</Button></DialogFooter>
         </DialogContent>
