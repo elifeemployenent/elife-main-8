@@ -132,12 +132,16 @@ export function DepartmentWorkLogSection() {
     const ok = await callFn({
       action: logDialog.id ? "update_log" : "create_log",
       id: logDialog.id, member_id: logDialog.memberId, work_details: details, work_date: logDialog.date,
+      is_public: logDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setLogDialog({ open: false }); loadAll(); }
   };
   const deleteLog = async (id: string) => {
     if (!confirm("Delete this log?")) return;
     if (await callFn({ action: "delete_log", id })) loadAll();
+  };
+  const toggleLogPublic = async (log: Log) => {
+    if (await callFn({ action: "update_log", id: log.id, is_public: !log.is_public })) loadAll();
   };
 
   const savePlan = async () => {
@@ -148,11 +152,12 @@ export function DepartmentWorkLogSection() {
       id: planDialog.id, department_id: planDialog.deptId,
       title, description: planDialog.description || null,
       target_date: planDialog.target_date || null, status: planDialog.status || "planning",
+      is_public: planDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setPlanDialog({ open: false }); loadAll(); }
   };
   const cyclePlanStatus = async (plan: Plan) => {
-    if (!canEditDept(plan.department_id)) return;
+    if (!canEditItem(plan.created_by_member_id)) return;
     const idx = PLAN_STATUSES.indexOf(plan.status as any);
     const next = PLAN_STATUSES[(idx + 1) % PLAN_STATUSES.length];
     if (await callFn({ action: "update_plan", id: plan.id, status: next })) loadAll();
@@ -160,6 +165,9 @@ export function DepartmentWorkLogSection() {
   const deletePlan = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
     if (await callFn({ action: "delete_plan", id })) loadAll();
+  };
+  const togglePlanPublic = async (plan: Plan) => {
+    if (await callFn({ action: "update_plan", id: plan.id, is_public: !plan.is_public })) loadAll();
   };
 
   const saveTodo = async () => {
@@ -169,22 +177,28 @@ export function DepartmentWorkLogSection() {
       action: todoDialog.id ? "update_todo" : "create_todo",
       id: todoDialog.id, department_id: todoDialog.deptId,
       title, description: todoDialog.description || null, due_date: todoDialog.due_date || null,
+      is_public: todoDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setTodoDialog({ open: false }); loadAll(); }
   };
   const toggleTodo = async (todo: Todo) => {
-    if (!canEditDept(todo.department_id)) return;
+    if (!canEditItem(todo.created_by_member_id)) return;
     if (await callFn({ action: "update_todo", id: todo.id, is_completed: !todo.is_completed })) loadAll();
   };
   const deleteTodo = async (id: string) => {
     if (!confirm("Delete this todo?")) return;
     if (await callFn({ action: "delete_todo", id })) loadAll();
   };
+  const toggleTodoPublic = async (todo: Todo) => {
+    if (await callFn({ action: "update_todo", id: todo.id, is_public: !todo.is_public })) loadAll();
+  };
 
   const filterMatch = (deptId: string) => filterDept === "all" || deptId === filterDept;
-  const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && (!filterDate || l.work_date === filterDate));
-  const visiblePlans = plans.filter((p) => filterMatch(p.department_id));
-  const visibleTodos = todos.filter((t) => filterMatch(t.department_id));
+  const isVisible = (item: { is_public: boolean; created_by_member_id: string | null }) =>
+    item.is_public || canEditItem(item.created_by_member_id);
+  const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && isVisible(l) && (!filterDate || l.work_date === filterDate));
+  const visiblePlans = plans.filter((p) => filterMatch(p.department_id) && isVisible(p));
+  const visibleTodos = todos.filter((t) => filterMatch(t.department_id) && isVisible(t));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const deptMap = new Map(departments.map((d) => [d.id, d]));
   const deptIds = [...deptMap.keys()];
