@@ -437,6 +437,7 @@ export function DepartmentWorkLogSection() {
           <div className="space-y-3">
             <div><Label>Date</Label><Input type="date" value={logDialog.date || today} onChange={(e) => setLogDialog({ ...logDialog, date: e.target.value })} disabled={!!logDialog.id} /></div>
             <div><Label>Work details</Label><Textarea rows={5} value={logDialog.details || ""} onChange={(e) => setLogDialog({ ...logDialog, details: e.target.value })} /></div>
+            <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{logDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={logDialog.is_public !== false} onCheckedChange={(c) => setLogDialog({ ...logDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setLogDialog({ open: false })}>Cancel</Button><Button onClick={saveLog}>Save</Button></DialogFooter>
         </DialogContent>
