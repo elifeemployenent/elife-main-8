@@ -270,7 +270,7 @@ export function DepartmentWorkLogSection() {
                 <CardHeader className="pb-3"><CardTitle className="text-base">Post a work log</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {session.memberships.map((m) => (
-                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, date: today, details: "" })}>
+                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, date: today, details: "", is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
                   ))}
