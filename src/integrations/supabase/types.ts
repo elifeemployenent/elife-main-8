@@ -373,6 +373,7 @@ export type Database = {
           department_id: string
           description: string | null
           id: string
+          is_public: boolean
           status: string
           target_date: string | null
           title: string
@@ -384,6 +385,7 @@ export type Database = {
           department_id: string
           description?: string | null
           id?: string
+          is_public?: boolean
           status?: string
           target_date?: string | null
           title: string
@@ -395,6 +397,7 @@ export type Database = {
           department_id?: string
           description?: string | null
           id?: string
+          is_public?: boolean
           status?: string
           target_date?: string | null
           title?: string
@@ -413,6 +416,7 @@ export type Database = {
           due_date: string | null
           id: string
           is_completed: boolean
+          is_public: boolean
           title: string
           updated_at: string
         }
@@ -426,6 +430,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_completed?: boolean
+          is_public?: boolean
           title: string
           updated_at?: string
         }
@@ -439,6 +444,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_completed?: boolean
+          is_public?: boolean
           title?: string
           updated_at?: string
         }
@@ -447,8 +453,10 @@ export type Database = {
       department_work_logs: {
         Row: {
           created_at: string
+          created_by_member_id: string | null
           department_id: string
           id: string
+          is_public: boolean
           member_id: string
           updated_at: string
           work_date: string
@@ -456,8 +464,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by_member_id?: string | null
           department_id: string
           id?: string
+          is_public?: boolean
           member_id: string
           updated_at?: string
           work_date?: string
@@ -465,8 +475,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by_member_id?: string | null
           department_id?: string
           id?: string
+          is_public?: boolean
           member_id?: string
           updated_at?: string
           work_date?: string
