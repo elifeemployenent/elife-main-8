@@ -516,6 +516,19 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{todoDialog.id ? "Edit" : "Add"} Todo</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {!todoDialog.id && (
+              <div>
+                <Label>Department</Label>
+                <Select value={todoDialog.deptId || ""} onValueChange={(v) => setTodoDialog({ ...todoDialog, deptId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {(isScode ? departments : departments.filter((d) => myDeptIds.has(d.id))).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Title *</Label><Input value={todoDialog.title || ""} onChange={(e) => setTodoDialog({ ...todoDialog, title: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea rows={3} value={todoDialog.description || ""} onChange={(e) => setTodoDialog({ ...todoDialog, description: e.target.value })} /></div>
             <div><Label>Due date</Label><Input type="date" value={todoDialog.due_date || ""} onChange={(e) => setTodoDialog({ ...todoDialog, due_date: e.target.value })} /></div>
