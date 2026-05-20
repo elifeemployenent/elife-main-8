@@ -46,6 +46,8 @@ export function DepartmentWorkLogSection() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskAgents, setTaskAgents] = useState<Map<string, Agent>>(new Map());
   const [loading, setLoading] = useState(true);
   const [filterDept, setFilterDept] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("");
