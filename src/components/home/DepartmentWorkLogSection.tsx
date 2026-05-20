@@ -215,12 +215,58 @@ export function DepartmentWorkLogSection() {
     if (await callFn({ action: "update_todo", id: todo.id, is_public: !todo.is_public })) loadAll();
   };
 
+  // ---- Tasks ----
+  const searchAgents = async (term: string) => {
+    setAgentSearch(term);
+    const cleaned = term.replace(/\D/g, "");
+    if (cleaned.length < 3) { setAgentResults([]); return; }
+    setSearching(true);
+    try {
+      const { data } = await supabase.functions.invoke("department-worklog", {
+        body: { action: "search_agent_by_mobile", mobile: cleaned, token: session?.token },
+      });
+      setAgentResults(((data as any)?.agents as Agent[]) || []);
+    } finally { setSearching(false); }
+  };
+  const saveTask = async () => {
+    const title = (taskDialog.title || "").trim();
+    if (!title) return toast({ title: "Enter title", variant: "destructive" });
+    if (!taskDialog.id && !taskDialog.deptId) return toast({ title: "Select a department", variant: "destructive" });
+    if (!taskDialog.id && !taskDialog.assigned_agent_id) return toast({ title: "Select an assignee", variant: "destructive" });
+    const ok = await callFn({
+      action: taskDialog.id ? "update_task" : "create_task",
+      id: taskDialog.id, department_id: taskDialog.deptId,
+      title, description: taskDialog.description || null,
+      due_date: taskDialog.due_date || null,
+      assigned_agent_id: taskDialog.assigned_agent_id,
+      status: taskDialog.status || "pending",
+    });
+    if (ok) { toast({ title: "Saved" }); setTaskDialog({ open: false }); setAgentSearch(""); setAgentResults([]); loadAll(); }
+  };
+  const cycleTaskStatus = async (task: Task) => {
+    const idx = TASK_STATUSES.indexOf(task.status as any);
+    const next = TASK_STATUSES[(idx + 1) % TASK_STATUSES.length];
+    if (await callFn({ action: "update_task", id: task.id, status: next })) loadAll();
+  };
+  const deleteTask = async (id: string) => {
+    if (!confirm("Delete this task?")) return;
+    if (await callFn({ action: "delete_task", id })) loadAll();
+  };
+  const canEditTask = (task: Task) => canEditItem(task.created_by_member_id);
+  const canUpdateTaskStatus = (task: Task) => {
+    if (canEditTask(task)) return true;
+    if (!session) return false;
+    // Assigned agent (matched by mobile through session agent id pool)
+    return session.agent.id === task.assigned_agent_id;
+  };
+
   const filterMatch = (deptId: string) => filterDept === "all" || deptId === filterDept;
   const isVisible = (item: { is_public: boolean; created_by_member_id: string | null }) =>
     item.is_public || canEditItem(item.created_by_member_id);
   const visibleLogs = logs.filter((l) => filterMatch(l.department_id) && isVisible(l) && (!filterDate || l.work_date === filterDate));
   const visiblePlans = plans.filter((p) => filterMatch(p.department_id) && isVisible(p));
   const visibleTodos = todos.filter((t) => filterMatch(t.department_id) && isVisible(t));
+  const visibleTasks = tasks.filter((t) => filterMatch(t.department_id));
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const deptMap = new Map(departments.map((d) => [d.id, d]));
   const deptIds = [...deptMap.keys()];
