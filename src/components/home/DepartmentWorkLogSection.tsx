@@ -480,7 +480,6 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{planDialog.id ? "Edit" : "Add"} Plan</DialogTitle></DialogHeader>
           <div className="space-y-3">
-          <div className="space-y-3">
             {!planDialog.id && (
               <div>
                 <Label>Department</Label>
