@@ -56,7 +56,7 @@ export function DepartmentWorkLogSection() {
   const [loginPin, setLoginPin] = useState("");
   const [logging, setLogging] = useState(false);
 
-  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; deptId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
   const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string; is_public?: boolean }>({ open: false });
   const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string; is_public?: boolean }>({ open: false });
 
