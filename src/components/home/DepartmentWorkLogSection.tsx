@@ -451,6 +451,22 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{logDialog.id ? "Edit" : "Add"} Work Log</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {!logDialog.id && (
+              <div>
+                <Label>Department</Label>
+                <Select value={logDialog.deptId || ""} onValueChange={(v) => {
+                  const mem = session?.memberships.find((m) => m.department_id === v);
+                  setLogDialog({ ...logDialog, deptId: v, memberId: mem?.member_id });
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {(isScode ? departments : departments.filter((d) => myDeptIds.has(d.id))).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Date</Label><Input type="date" value={logDialog.date || today} onChange={(e) => setLogDialog({ ...logDialog, date: e.target.value })} disabled={!!logDialog.id} /></div>
             <div><Label>Work details</Label><Textarea rows={5} value={logDialog.details || ""} onChange={(e) => setLogDialog({ ...logDialog, details: e.target.value })} /></div>
             <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{logDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={logDialog.is_public !== false} onCheckedChange={(c) => setLogDialog({ ...logDialog, is_public: c })} /></div>
