@@ -380,11 +380,15 @@ export function DepartmentWorkLogSection() {
 
           {/* TODOS */}
           <TabsContent value="todos" className="space-y-3">
-            {session && session.memberships.length > 0 && (
+            {session && (session.memberships.length > 0 || isScode) && (
               <Card className="border-primary/30">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Add a todo</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
-                  {session.memberships.map((m) => (
+                  {isScode ? (
+                    <Button size="sm" onClick={() => setTodoDialog({ open: true, is_public: true })}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add todo (any department)
+                    </Button>
+                  ) : session.memberships.map((m) => (
                     <Button key={m.member_id} size="sm" onClick={() => setTodoDialog({ open: true, deptId: m.department_id, is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
