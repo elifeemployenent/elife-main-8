@@ -326,10 +326,11 @@ export function DepartmentWorkLogSection() {
         </div>
 
         <Tabs defaultValue="logs">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="logs"><FileText className="h-3.5 w-3.5 mr-1" /> Logs</TabsTrigger>
             <TabsTrigger value="plans"><Target className="h-3.5 w-3.5 mr-1" /> Planning</TabsTrigger>
             <TabsTrigger value="todos"><ListTodo className="h-3.5 w-3.5 mr-1" /> Todos</TabsTrigger>
+            <TabsTrigger value="tasks"><ClipboardList className="h-3.5 w-3.5 mr-1" /> Tasks</TabsTrigger>
           </TabsList>
 
           {/* LOGS */}
