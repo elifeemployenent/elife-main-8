@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
     const firstMember = myMembers[0];
     if (action === "create_plan") {
       const department_id = String(body.department_id || "");
-      if (!myDeptIds.has(department_id)) return json({ error: "Forbidden" }, 403);
+      if (!isScode && !myDeptIds.has(department_id)) return json({ error: "Forbidden" }, 403);
       const title = String(body.title || "").trim();
       if (!title) return json({ error: "Title required" }, 400);
       const member = myMembers.find((m) => m.department_id === department_id) || firstMember;
@@ -261,7 +261,7 @@ Deno.serve(async (req) => {
     // ---- Todos ----
     if (action === "create_todo") {
       const department_id = String(body.department_id || "");
-      if (!myDeptIds.has(department_id)) return json({ error: "Forbidden" }, 403);
+      if (!isScode && !myDeptIds.has(department_id)) return json({ error: "Forbidden" }, 403);
       const title = String(body.title || "").trim();
       if (!title) return json({ error: "Title required" }, 400);
       const member = myMembers.find((m) => m.department_id === department_id) || firstMember;
