@@ -56,7 +56,7 @@ export function DepartmentWorkLogSection() {
   const [loginPin, setLoginPin] = useState("");
   const [logging, setLogging] = useState(false);
 
-  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; deptId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
   const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string; is_public?: boolean }>({ open: false });
   const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string; is_public?: boolean }>({ open: false });
 
@@ -130,9 +130,11 @@ export function DepartmentWorkLogSection() {
   const saveLog = async () => {
     const details = (logDialog.details || "").trim();
     if (!details) return toast({ title: "Enter work details", variant: "destructive" });
+    if (!logDialog.id && !logDialog.memberId && !logDialog.deptId) return toast({ title: "Select a department", variant: "destructive" });
     const ok = await callFn({
       action: logDialog.id ? "update_log" : "create_log",
-      id: logDialog.id, member_id: logDialog.memberId, work_details: details, work_date: logDialog.date,
+      id: logDialog.id, member_id: logDialog.memberId, department_id: logDialog.deptId,
+      work_details: details, work_date: logDialog.date,
       is_public: logDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setLogDialog({ open: false }); loadAll(); }
@@ -267,12 +269,16 @@ export function DepartmentWorkLogSection() {
 
           {/* LOGS */}
           <TabsContent value="logs" className="space-y-3">
-            {session && session.memberships.length > 0 && (
+            {session && (session.memberships.length > 0 || isScode) && (
               <Card className="border-primary/30">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Post a work log</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
-                  {session.memberships.map((m) => (
-                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, date: today, details: "", is_public: true })}>
+                  {isScode ? (
+                    <Button size="sm" onClick={() => setLogDialog({ open: true, date: today, details: "", is_public: true })}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add log (any department)
+                    </Button>
+                  ) : session.memberships.map((m) => (
+                    <Button key={m.member_id} size="sm" onClick={() => setLogDialog({ open: true, memberId: m.member_id, deptId: m.department_id, date: today, details: "", is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
                   ))}
@@ -315,11 +321,15 @@ export function DepartmentWorkLogSection() {
 
           {/* PLANS */}
           <TabsContent value="plans" className="space-y-3">
-            {session && session.memberships.length > 0 && (
+            {session && (session.memberships.length > 0 || isScode) && (
               <Card className="border-primary/30">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Add a plan</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
-                  {session.memberships.map((m) => (
+                  {isScode ? (
+                    <Button size="sm" onClick={() => setPlanDialog({ open: true, status: "planning", is_public: true })}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add plan (any department)
+                    </Button>
+                  ) : session.memberships.map((m) => (
                     <Button key={m.member_id} size="sm" onClick={() => setPlanDialog({ open: true, deptId: m.department_id, status: "planning", is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
@@ -370,11 +380,15 @@ export function DepartmentWorkLogSection() {
 
           {/* TODOS */}
           <TabsContent value="todos" className="space-y-3">
-            {session && session.memberships.length > 0 && (
+            {session && (session.memberships.length > 0 || isScode) && (
               <Card className="border-primary/30">
                 <CardHeader className="pb-3"><CardTitle className="text-base">Add a todo</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
-                  {session.memberships.map((m) => (
+                  {isScode ? (
+                    <Button size="sm" onClick={() => setTodoDialog({ open: true, is_public: true })}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add todo (any department)
+                    </Button>
+                  ) : session.memberships.map((m) => (
                     <Button key={m.member_id} size="sm" onClick={() => setTodoDialog({ open: true, deptId: m.department_id, is_public: true })}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {m.department.name}
                     </Button>
@@ -437,6 +451,22 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{logDialog.id ? "Edit" : "Add"} Work Log</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {!logDialog.id && (
+              <div>
+                <Label>Department</Label>
+                <Select value={logDialog.deptId || ""} onValueChange={(v) => {
+                  const mem = session?.memberships.find((m) => m.department_id === v);
+                  setLogDialog({ ...logDialog, deptId: v, memberId: mem?.member_id });
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {(isScode ? departments : departments.filter((d) => myDeptIds.has(d.id))).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Date</Label><Input type="date" value={logDialog.date || today} onChange={(e) => setLogDialog({ ...logDialog, date: e.target.value })} disabled={!!logDialog.id} /></div>
             <div><Label>Work details</Label><Textarea rows={5} value={logDialog.details || ""} onChange={(e) => setLogDialog({ ...logDialog, details: e.target.value })} /></div>
             <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{logDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={logDialog.is_public !== false} onCheckedChange={(c) => setLogDialog({ ...logDialog, is_public: c })} /></div>
@@ -450,6 +480,19 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{planDialog.id ? "Edit" : "Add"} Plan</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {!planDialog.id && (
+              <div>
+                <Label>Department</Label>
+                <Select value={planDialog.deptId || ""} onValueChange={(v) => setPlanDialog({ ...planDialog, deptId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {(isScode ? departments : departments.filter((d) => myDeptIds.has(d.id))).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Title *</Label><Input value={planDialog.title || ""} onChange={(e) => setPlanDialog({ ...planDialog, title: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea rows={3} value={planDialog.description || ""} onChange={(e) => setPlanDialog({ ...planDialog, description: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-2">
@@ -473,6 +516,19 @@ export function DepartmentWorkLogSection() {
         <DialogContent>
           <DialogHeader><DialogTitle>{todoDialog.id ? "Edit" : "Add"} Todo</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            {!todoDialog.id && (
+              <div>
+                <Label>Department</Label>
+                <Select value={todoDialog.deptId || ""} onValueChange={(v) => setTodoDialog({ ...todoDialog, deptId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {(isScode ? departments : departments.filter((d) => myDeptIds.has(d.id))).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div><Label>Title *</Label><Input value={todoDialog.title || ""} onChange={(e) => setTodoDialog({ ...todoDialog, title: e.target.value })} /></div>
             <div><Label>Description</Label><Textarea rows={3} value={todoDialog.description || ""} onChange={(e) => setTodoDialog({ ...todoDialog, description: e.target.value })} /></div>
             <div><Label>Due date</Label><Input type="date" value={todoDialog.due_date || ""} onChange={(e) => setTodoDialog({ ...todoDialog, due_date: e.target.value })} /></div>
