@@ -66,8 +66,9 @@ export function DepartmentWorkLogSection() {
   const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string; is_public?: boolean }>({ open: false });
   const [taskDialog, setTaskDialog] = useState<{
     open: boolean; id?: string; deptId?: string; title?: string; description?: string;
-    due_date?: string; assigned_agent_id?: string; assigned_agent_label?: string; status?: string;
+    due_date?: string; assigned_agent_id?: string; assigned_agent_label?: string; status?: string; remarks?: string;
   }>({ open: false });
+  const [remarksDialog, setRemarksDialog] = useState<{ open: boolean; task?: Task; remarks?: string; status?: string }>({ open: false });
   const [agentSearch, setAgentSearch] = useState("");
   const [agentResults, setAgentResults] = useState<Agent[]>([]);
   const [searching, setSearching] = useState(false);
