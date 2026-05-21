@@ -64,6 +64,7 @@ export function CheckStatusSection() {
   const [oldPayments, setOldPayments] = useState<OldPaymentResult[]>([]);
   const [agentInfo, setAgentInfo] = useState<AgentResult | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [assignedTasks, setAssignedTasks] = useState<Array<{ id: string; title: string; description: string | null; due_date: string | null; status: string; remarks: string | null; department_name: string | null; department_color: string | null; created_at: string }>>([]);
   const [registerOpen, setRegisterOpen] = useState(false);
   const handleSearch = async () => {
     const cleaned = mobile.replace(/\D/g, "");
