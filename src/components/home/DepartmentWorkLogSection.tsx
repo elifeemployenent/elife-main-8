@@ -789,13 +789,39 @@ export function DepartmentWorkLogSection() {
                 <Label>Status</Label>
                 <Select value={planDialog.status || "planning"} onValueChange={(v) => setPlanDialog({ ...planDialog, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}</SelectContent>
+                  <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s}>{PLAN_STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
+            <div><Label>Remarks</Label><Textarea rows={2} placeholder="Optional remarks" value={planDialog.remarks || ""} onChange={(e) => setPlanDialog({ ...planDialog, remarks: e.target.value })} /></div>
             <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{planDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={planDialog.is_public !== false} onCheckedChange={(c) => setPlanDialog({ ...planDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setPlanDialog({ open: false })}>Cancel</Button><Button onClick={savePlan}>Save</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Plan status change dialog */}
+      <Dialog open={planStatusDialog.open} onOpenChange={(open) => { if (!open) setPlanStatusDialog({ open: false }); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Update Plan Status</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            {planStatusDialog.plan && <p className="text-sm font-medium">{planStatusDialog.plan.title}</p>}
+            <div>
+              <Label>Status</Label>
+              <Select value={planStatusDialog.status || "planning"} onValueChange={(v) => setPlanStatusDialog({ ...planStatusDialog, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s}>{PLAN_STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Remarks</Label>
+              <Textarea rows={4} placeholder="Add a note about this status change..." value={planStatusDialog.remarks || ""} onChange={(e) => setPlanStatusDialog({ ...planStatusDialog, remarks: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanStatusDialog({ open: false })}>Cancel</Button>
+            <Button onClick={savePlanStatus}>Save</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
