@@ -435,25 +435,40 @@ export function DepartmentWorkLogSection() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <DeptBadge deptId={plan.department_id} />
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => cyclePlanStatus(plan)}
-                              className={`text-[10px] capitalize rounded border px-2 py-0.5 font-medium transition ${canEdit ? "hover:opacity-80 cursor-pointer" : "cursor-default"} ${STATUS_STYLE[plan.status] || ""}`}
-                              title={canEdit ? "Click to change status" : ""}
-                            >
-                              {plan.status.replace("_", " ")}
-                            </button>
+                            <span className={`text-[10px] capitalize rounded border px-2 py-0.5 font-medium ${STATUS_STYLE[plan.status] || ""}`}>
+                              {PLAN_STATUS_LABEL[plan.status] || plan.status.replace("_", " ")}
+                            </span>
                             {plan.target_date && <span className="text-xs text-muted-foreground">🎯 {new Date(plan.target_date).toLocaleDateString("en-IN")}</span>}
                             {!plan.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className="font-semibold text-sm">{plan.title}</p>
                           {plan.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{plan.description}</p>}
+                          {plan.remarks && (
+                            <div className="mt-2 p-2 rounded bg-muted/50 border text-xs">
+                              <div className="font-medium text-muted-foreground mb-0.5">Remarks</div>
+                              <p className="whitespace-pre-wrap">{plan.remarks}</p>
+                            </div>
+                          )}
+                          {canEdit && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {PLAN_STATUSES.filter((s) => s !== plan.status).map((s) => (
+                                <Button
+                                  key={s}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-[11px] px-2"
+                                  onClick={() => setPlanStatusDialog({ open: true, plan, status: s, remarks: plan.remarks || "" })}
+                                >
+                                  {PLAN_STATUS_LABEL[s]}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         {canEdit && (
                           <div className="flex gap-1 items-center">
                             <Button size="icon" variant="ghost" className="h-7 w-7" title={plan.is_public ? "Make private" : "Make public"} onClick={() => togglePlanPublic(plan)}>{plan.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status, is_public: plan.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status, remarks: plan.remarks || "", is_public: plan.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deletePlan(plan.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
