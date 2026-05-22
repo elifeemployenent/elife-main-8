@@ -168,6 +168,11 @@ export function DepartmentWorkLogSection() {
     const next = PLAN_STATUSES[(idx + 1) % PLAN_STATUSES.length];
     if (await callFn({ action: "update_plan", id: plan.id, status: next })) loadAll();
   };
+  const markPlanCompleted = async (plan: Plan) => {
+    if (!canEditItem(plan.created_by_member_id)) return;
+    const next = plan.status === "completed" ? "in_progress" : "completed";
+    if (await callFn({ action: "update_plan", id: plan.id, status: next })) loadAll();
+  };
   const deletePlan = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
     if (await callFn({ action: "delete_plan", id })) loadAll();
