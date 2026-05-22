@@ -349,6 +349,14 @@ export function DepartmentWorkLogSection() {
                 </CardContent>
               </Card>
             )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button size="sm" variant={!showPlanCompleted ? "default" : "outline"} onClick={() => setShowPlanCompleted(false)}>
+                <Target className="h-3.5 w-3.5 mr-1" /> Active ({visiblePlansAll.filter((p) => p.status !== "completed").length})
+              </Button>
+              <Button size="sm" variant={showPlanCompleted ? "default" : "outline"} onClick={() => setShowPlanCompleted(true)}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Completed ({visiblePlansAll.filter((p) => p.status === "completed").length})
+              </Button>
+            </div>
             {loading ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
               : visiblePlans.length === 0 ? (
                 <Card><CardContent className="py-10 text-center text-muted-foreground"><Target className="h-10 w-10 mx-auto mb-2 opacity-40" />No plans yet</CardContent></Card>
