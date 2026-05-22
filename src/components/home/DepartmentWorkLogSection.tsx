@@ -19,7 +19,8 @@ const STATUS_STYLE: Record<string, string> = {
   pending: "bg-slate-500/15 text-slate-700 border-slate-500/40 dark:text-slate-300",
   in_progress: "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-300",
   completed: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-300",
-  on_hold: "bg-rose-500/15 text-rose-700 border-rose-500/40 dark:text-rose-300",
+  on_hold: "bg-orange-500/15 text-orange-700 border-orange-500/40 dark:text-orange-300",
+  cancelled: "bg-rose-500/15 text-rose-700 border-rose-500/40 dark:text-rose-300",
 };
 const PALETTE = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
@@ -27,7 +28,7 @@ type Dept = { id: string; name: string; description: string | null; color: strin
 type Member = { id: string; agent_id: string; department_id: string; member_role: string };
 type Agent = { id: string; name: string; mobile: string; is_scode?: boolean };
 type Log = { id: string; member_id: string; department_id: string; work_date: string; work_details: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
-type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
+type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; remarks: string | null; created_at: string; created_by_member_id: string | null; is_public: boolean };
 type Todo = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; is_completed: boolean; completed_at: string | null; created_at: string; created_by_member_id: string | null; is_public: boolean };
 type Task = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; assigned_agent_id: string; status: string; remarks: string | null; completed_at: string | null; created_at: string; created_by_member_id: string | null };
 
@@ -35,7 +36,8 @@ interface Membership { member_id: string; department_id: string; member_role: st
 interface Session { token: string; agent: Agent; memberships: Membership[] }
 
 const SESSION_KEY = "elife_dept_session";
-const PLAN_STATUSES = ["planning", "in_progress", "completed", "on_hold"] as const;
+const PLAN_STATUSES = ["planning", "in_progress", "on_hold", "completed", "cancelled"] as const;
+const PLAN_STATUS_LABEL: Record<string, string> = { planning: "Planning", in_progress: "Work in Progress", on_hold: "On Hold", completed: "Completed", cancelled: "Cancelled" };
 const TASK_STATUSES = ["pending", "in_progress", "completed"] as const;
 
 export function DepartmentWorkLogSection() {
@@ -62,7 +64,8 @@ export function DepartmentWorkLogSection() {
   const [logging, setLogging] = useState(false);
 
   const [logDialog, setLogDialog] = useState<{ open: boolean; id?: string; memberId?: string; deptId?: string; details?: string; date?: string; is_public?: boolean }>({ open: false });
-  const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string; is_public?: boolean }>({ open: false });
+  const [planDialog, setPlanDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; target_date?: string; status?: string; remarks?: string; is_public?: boolean }>({ open: false });
+  const [planStatusDialog, setPlanStatusDialog] = useState<{ open: boolean; plan?: Plan; status?: string; remarks?: string }>({ open: false });
   const [todoDialog, setTodoDialog] = useState<{ open: boolean; id?: string; deptId?: string; title?: string; description?: string; due_date?: string; is_public?: boolean }>({ open: false });
   const [taskDialog, setTaskDialog] = useState<{
     open: boolean; id?: string; deptId?: string; title?: string; description?: string;
@@ -175,15 +178,20 @@ export function DepartmentWorkLogSection() {
       id: planDialog.id, department_id: planDialog.deptId,
       title, description: planDialog.description || null,
       target_date: planDialog.target_date || null, status: planDialog.status || "planning",
+      remarks: planDialog.remarks ?? null,
       is_public: planDialog.is_public !== false,
     });
     if (ok) { toast({ title: "Saved" }); setPlanDialog({ open: false }); loadAll(); }
   };
-  const cyclePlanStatus = async (plan: Plan) => {
-    if (!canEditItem(plan.created_by_member_id)) return;
-    const idx = PLAN_STATUSES.indexOf(plan.status as any);
-    const next = PLAN_STATUSES[(idx + 1) % PLAN_STATUSES.length];
-    if (await callFn({ action: "update_plan", id: plan.id, status: next })) loadAll();
+  const savePlanStatus = async () => {
+    if (!planStatusDialog.plan) return;
+    const ok = await callFn({
+      action: "update_plan",
+      id: planStatusDialog.plan.id,
+      status: planStatusDialog.status || planStatusDialog.plan.status,
+      remarks: planStatusDialog.remarks || null,
+    });
+    if (ok) { toast({ title: "Updated" }); setPlanStatusDialog({ open: false }); loadAll(); }
   };
   const deletePlan = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
@@ -427,25 +435,40 @@ export function DepartmentWorkLogSection() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <DeptBadge deptId={plan.department_id} />
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => cyclePlanStatus(plan)}
-                              className={`text-[10px] capitalize rounded border px-2 py-0.5 font-medium transition ${canEdit ? "hover:opacity-80 cursor-pointer" : "cursor-default"} ${STATUS_STYLE[plan.status] || ""}`}
-                              title={canEdit ? "Click to change status" : ""}
-                            >
-                              {plan.status.replace("_", " ")}
-                            </button>
+                            <span className={`text-[10px] capitalize rounded border px-2 py-0.5 font-medium ${STATUS_STYLE[plan.status] || ""}`}>
+                              {PLAN_STATUS_LABEL[plan.status] || plan.status.replace("_", " ")}
+                            </span>
                             {plan.target_date && <span className="text-xs text-muted-foreground">🎯 {new Date(plan.target_date).toLocaleDateString("en-IN")}</span>}
                             {!plan.is_public && <Badge variant="outline" className="text-[10px]"><EyeOff className="h-3 w-3 mr-1" />Private</Badge>}
                           </div>
                           <p className="font-semibold text-sm">{plan.title}</p>
                           {plan.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{plan.description}</p>}
+                          {plan.remarks && (
+                            <div className="mt-2 p-2 rounded bg-muted/50 border text-xs">
+                              <div className="font-medium text-muted-foreground mb-0.5">Remarks</div>
+                              <p className="whitespace-pre-wrap">{plan.remarks}</p>
+                            </div>
+                          )}
+                          {canEdit && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {PLAN_STATUSES.filter((s) => s !== plan.status).map((s) => (
+                                <Button
+                                  key={s}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-[11px] px-2"
+                                  onClick={() => setPlanStatusDialog({ open: true, plan, status: s, remarks: plan.remarks || "" })}
+                                >
+                                  {PLAN_STATUS_LABEL[s]}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         {canEdit && (
                           <div className="flex gap-1 items-center">
                             <Button size="icon" variant="ghost" className="h-7 w-7" title={plan.is_public ? "Make private" : "Make public"} onClick={() => togglePlanPublic(plan)}>{plan.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status, is_public: plan.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPlanDialog({ open: true, id: plan.id, deptId: plan.department_id, title: plan.title, description: plan.description || "", target_date: plan.target_date || "", status: plan.status, remarks: plan.remarks || "", is_public: plan.is_public })}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deletePlan(plan.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                           </div>
                         )}
@@ -766,13 +789,39 @@ export function DepartmentWorkLogSection() {
                 <Label>Status</Label>
                 <Select value={planDialog.status || "planning"} onValueChange={(v) => setPlanDialog({ ...planDialog, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}</SelectContent>
+                  <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s}>{PLAN_STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
+            <div><Label>Remarks</Label><Textarea rows={2} placeholder="Optional remarks" value={planDialog.remarks || ""} onChange={(e) => setPlanDialog({ ...planDialog, remarks: e.target.value })} /></div>
             <div className="flex items-center justify-between rounded border p-2"><Label className="text-sm flex items-center gap-2">{planDialog.is_public !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Visible to public</Label><Switch checked={planDialog.is_public !== false} onCheckedChange={(c) => setPlanDialog({ ...planDialog, is_public: c })} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setPlanDialog({ open: false })}>Cancel</Button><Button onClick={savePlan}>Save</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Plan status change dialog */}
+      <Dialog open={planStatusDialog.open} onOpenChange={(open) => { if (!open) setPlanStatusDialog({ open: false }); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Update Plan Status</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            {planStatusDialog.plan && <p className="text-sm font-medium">{planStatusDialog.plan.title}</p>}
+            <div>
+              <Label>Status</Label>
+              <Select value={planStatusDialog.status || "planning"} onValueChange={(v) => setPlanStatusDialog({ ...planStatusDialog, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PLAN_STATUSES.map((s) => <SelectItem key={s} value={s}>{PLAN_STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Remarks</Label>
+              <Textarea rows={4} placeholder="Add a note about this status change..." value={planStatusDialog.remarks || ""} onChange={(e) => setPlanStatusDialog({ ...planStatusDialog, remarks: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanStatusDialog({ open: false })}>Cancel</Button>
+            <Button onClick={savePlanStatus}>Save</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
