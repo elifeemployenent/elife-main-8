@@ -47,6 +47,9 @@ export function DepartmentWorkLogSection() {
   const [filterDept, setFilterDept] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<string>("");
   const [showDate, setShowDate] = useState(false);
+  const [todoView, setTodoView] = useState<"pending" | "completed">("pending");
+  const [todoHistoryDate, setTodoHistoryDate] = useState<string>("");
+  const [showPlanCompleted, setShowPlanCompleted] = useState(false);
 
   const [session, setSession] = useState<Session | null>(() => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
