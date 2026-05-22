@@ -19,7 +19,8 @@ const STATUS_STYLE: Record<string, string> = {
   pending: "bg-slate-500/15 text-slate-700 border-slate-500/40 dark:text-slate-300",
   in_progress: "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-300",
   completed: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-300",
-  on_hold: "bg-rose-500/15 text-rose-700 border-rose-500/40 dark:text-rose-300",
+  on_hold: "bg-orange-500/15 text-orange-700 border-orange-500/40 dark:text-orange-300",
+  cancelled: "bg-rose-500/15 text-rose-700 border-rose-500/40 dark:text-rose-300",
 };
 const PALETTE = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
@@ -27,7 +28,7 @@ type Dept = { id: string; name: string; description: string | null; color: strin
 type Member = { id: string; agent_id: string; department_id: string; member_role: string };
 type Agent = { id: string; name: string; mobile: string; is_scode?: boolean };
 type Log = { id: string; member_id: string; department_id: string; work_date: string; work_details: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
-type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; created_at: string; created_by_member_id: string | null; is_public: boolean };
+type Plan = { id: string; department_id: string; title: string; description: string | null; target_date: string | null; status: string; remarks: string | null; created_at: string; created_by_member_id: string | null; is_public: boolean };
 type Todo = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; is_completed: boolean; completed_at: string | null; created_at: string; created_by_member_id: string | null; is_public: boolean };
 type Task = { id: string; department_id: string; title: string; description: string | null; due_date: string | null; assigned_agent_id: string; status: string; remarks: string | null; completed_at: string | null; created_at: string; created_by_member_id: string | null };
 
@@ -35,7 +36,8 @@ interface Membership { member_id: string; department_id: string; member_role: st
 interface Session { token: string; agent: Agent; memberships: Membership[] }
 
 const SESSION_KEY = "elife_dept_session";
-const PLAN_STATUSES = ["planning", "in_progress", "completed", "on_hold"] as const;
+const PLAN_STATUSES = ["planning", "in_progress", "on_hold", "completed", "cancelled"] as const;
+const PLAN_STATUS_LABEL: Record<string, string> = { planning: "Planning", in_progress: "Work in Progress", on_hold: "On Hold", completed: "Completed", cancelled: "Cancelled" };
 const TASK_STATUSES = ["pending", "in_progress", "completed"] as const;
 
 export function DepartmentWorkLogSection() {
