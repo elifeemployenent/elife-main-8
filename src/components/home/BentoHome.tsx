@@ -52,7 +52,11 @@ export function BentoHome({ afterHero }: { afterHero?: React.ReactNode } = {}) {
               </Button>
             </div>
           </div>
+        </div>
 
+        {afterHero}
+
+        <div className="grid grid-cols-6 auto-rows-[minmax(120px,auto)] gap-3 md:gap-4">
           {/* Stat — Divisions */}
           <Link to="/divisions" className="col-span-3 lg:col-span-2 rounded-3xl bg-card border border-border/60 p-5 md:p-6 flex flex-col justify-between hover:border-primary/40 hover:shadow-lg transition group">
             <div className="flex items-start justify-between">
