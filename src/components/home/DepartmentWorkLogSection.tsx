@@ -89,6 +89,12 @@ export function DepartmentWorkLogSection() {
 
   useEffect(() => { loadAll(); }, []);
 
+  useEffect(() => {
+    const openLogin = () => { if (!session) setLoginOpen(true); };
+    window.addEventListener("elife:open-dept-login", openLogin);
+    return () => window.removeEventListener("elife:open-dept-login", openLogin);
+  }, [session]);
+
   const handleLogin = async () => {
     setLogging(true);
     try {
@@ -231,7 +237,7 @@ export function DepartmentWorkLogSection() {
   const cardStyle = (deptId: string) => ({ borderLeftColor: colorFor(deptId), backgroundColor: `${colorFor(deptId)}10` });
 
   return (
-    <section className="py-12 lg:py-16 bg-background">
+    <section id="department-login" className="py-12 lg:py-16 bg-background">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="text-center mb-6">
           <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
