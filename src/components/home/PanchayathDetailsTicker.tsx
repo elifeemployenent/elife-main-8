@@ -61,24 +61,36 @@ export function PanchayathDetailsTicker() {
         </span>
         <div className="flex-1 overflow-hidden">
           <div className="flex gap-2 animate-marquee whitespace-nowrap" style={{ animationDuration: "60s" }}>
-            {loop.map((p, i) => (
-              <button
-                key={`${p.id}-${i}`}
-                onClick={() => navigate("/panchayaths")}
-                className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-amber-300 hover:border-kerala-green hover:shadow transition-all"
-                title={`${p.name}${p.district ? " · " + p.district : ""}`}
-              >
-                <MapPin className="w-3.5 h-3.5 text-kerala-green" />
-                <span className="text-xs font-semibold text-foreground">{p.name}</span>
-                {p.name_ml && <span className="text-[11px] text-muted-foreground">({p.name_ml})</span>}
-                <span className="flex items-center gap-1 text-[11px] text-amber-700 font-medium border-l border-amber-200 pl-2">
-                  <Users className="w-3 h-3" /> {p.total}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  C:{p.coordinator} · TL:{p.team_leader} · GL:{p.group_leader} · PRO:{p.pro}
-                </span>
-              </button>
-            ))}
+            {loop.map((p, i) => {
+              const rank = (i % rows.length) + 1;
+              const rankColor =
+                rank === 1
+                  ? "bg-amber-500 text-white"
+                  : rank === 2
+                  ? "bg-slate-400 text-white"
+                  : rank === 3
+                  ? "bg-orange-600 text-white"
+                  : "bg-kerala-green/10 text-kerala-green";
+              return (
+                <button
+                  key={`${p.id}-${i}`}
+                  onClick={() => navigate("/panchayaths")}
+                  className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-amber-300 hover:border-kerala-green hover:shadow transition-all"
+                  title={`#${rank} ${p.name}${p.district ? " · " + p.district : ""}`}
+                >
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${rankColor}`}>#{rank}</span>
+                  <MapPin className="w-3.5 h-3.5 text-kerala-green" />
+                  <span className="text-xs font-semibold text-foreground">{p.name}</span>
+                  {p.name_ml && <span className="text-[11px] text-muted-foreground">({p.name_ml})</span>}
+                  <span className="flex items-center gap-1 text-[11px] text-amber-700 font-medium border-l border-amber-200 pl-2">
+                    <Users className="w-3 h-3" /> {p.total}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    C:{p.coordinator} · TL:{p.team_leader} · GL:{p.group_leader} · PRO:{p.pro}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
