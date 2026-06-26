@@ -5,11 +5,13 @@ import { DepartmentWorkLogSection } from "@/components/home/DepartmentWorkLogSec
 import { DepartmentPendingSlider } from "@/components/home/DepartmentPendingSlider";
 import { PaymentStatusSlider } from "@/components/home/PaymentStatusSlider";
 import { PanchayathFlashBanner } from "@/components/home/PanchayathFlashBanner";
+import { PanchayathDetailsTicker } from "@/components/home/PanchayathDetailsTicker";
 
 const Index = () => {
   return (
     <Layout>
       <PanchayathFlashBanner />
+      <PanchayathDetailsTicker />
       <BentoHome
         afterHero={
           <>
