@@ -42,7 +42,8 @@ import {
   PennyekartAgent, 
   AgentRole, 
   ROLE_LABELS, 
-  ROLE_HIERARCHY,
+  ALL_ROLES,
+  isTopLevelRole,
   getParentRole,
   useAgentMutations 
 } from "@/hooks/usePennyekartAgents";
@@ -52,19 +53,26 @@ import { cn } from "@/lib/utils";
 const agentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   mobile: z.string().regex(/^[0-9]{10}$/, "Mobile must be 10 digits"),
-  role: z.enum(["team_leader", "coordinator", "group_leader", "pro"] as const),
+  role: z.enum(["super_admin_partner", "team_leader", "coordinator", "group_leader", "pro"] as const),
   panchayath_id: z.string().uuid("Select a panchayath"),
   ward: z.string().min(1, "Ward is required").max(50),
   parent_agent_id: z.string().uuid().nullable().optional(),
   customer_count: z.number().int().min(0).default(0),
   responsible_panchayath_ids: z.array(z.string()).default([]),
 }).superRefine((data, ctx) => {
-  if (data.role !== "team_leader" && !data.parent_agent_id) {
+  if (!isTopLevelRole(data.role) && !data.parent_agent_id) {
     const parentRoleLabel = data.role === "pro" ? "Group Leader" : data.role === "group_leader" ? "Coordinator" : "Team Leader";
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: `Please select a ${parentRoleLabel}`,
       path: ["parent_agent_id"],
+    });
+  }
+  if (data.role === "super_admin_partner" && (!data.responsible_panchayath_ids || data.responsible_panchayath_ids.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Select at least one allocated panchayath",
+      path: ["responsible_panchayath_ids"],
     });
   }
 });
