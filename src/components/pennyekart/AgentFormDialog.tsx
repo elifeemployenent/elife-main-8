@@ -496,13 +496,15 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
                   />
                 )}
 
-                {selectedRole === "team_leader" && (
+                {showResponsiblePanchayaths && (
                   <FormField
                     control={form.control}
                     name="responsible_panchayath_ids"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Responsible Panchayaths</FormLabel>
+                        <FormLabel className="text-sm font-medium">
+                          {selectedRole === "super_admin_partner" ? "Allocated Panchayaths" : "Responsible Panchayaths"}
+                        </FormLabel>
                         <Popover open={panchayathPopoverOpen} onOpenChange={setPanchayathPopoverOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
