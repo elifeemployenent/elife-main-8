@@ -30,15 +30,36 @@ export function AgentHierarchyTree({ agents, onSelectAgent, selectedAgentId }: A
     );
   }
 
-  // Group by panchayath first
-  const byPanchayath = agents.reduce((acc, agent) => {
-    const panchayathName = agent.panchayath?.name || "Unknown Panchayath";
-    if (!acc[panchayathName]) {
-      acc[panchayathName] = [];
+  // Build panchayath id -> name map from agents (so we can place SABPs into
+  // every panchayath listed in their responsible_panchayath_ids).
+  const panchayathNameById = new Map<string, string>();
+  for (const a of agents) {
+    if (a.panchayath_id && a.panchayath?.name) {
+      panchayathNameById.set(a.panchayath_id, a.panchayath.name);
     }
-    acc[panchayathName].push(agent);
-    return acc;
-  }, {} as Record<string, PennyekartAgent[]>);
+  }
+
+  // Group by panchayath. Each agent appears under its home panchayath, plus
+  // Super Admin / Business Partners additionally appear under every panchayath
+  // they are allocated to via responsible_panchayath_ids.
+  const byPanchayath: Record<string, PennyekartAgent[]> = {};
+  const push = (name: string, agent: PennyekartAgent) => {
+    if (!byPanchayath[name]) byPanchayath[name] = [];
+    if (!byPanchayath[name].some((x) => x.id === agent.id)) {
+      byPanchayath[name].push(agent);
+    }
+  };
+
+  for (const agent of agents) {
+    const homeName = agent.panchayath?.name || "Unknown Panchayath";
+    push(homeName, agent);
+    if (agent.role === "super_admin_partner" && agent.responsible_panchayath_ids?.length) {
+      for (const pid of agent.responsible_panchayath_ids) {
+        const name = panchayathNameById.get(pid);
+        if (name && name !== homeName) push(name, agent);
+      }
+    }
+  }
 
   return (
     <div className="space-y-4">
