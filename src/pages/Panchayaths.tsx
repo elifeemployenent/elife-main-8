@@ -24,6 +24,15 @@ interface RoleCounts {
   total: number;
 }
 
+interface AgentLite {
+  id: string;
+  name: string;
+  mobile: string;
+  role: string;
+  panchayath_id: string;
+  responsible_panchayath_ids: string[] | null;
+}
+
 const roleIcon = {
   coordinator: Crown,
   team_leader: Shield,
@@ -34,6 +43,8 @@ const roleIcon = {
 export default function Panchayaths() {
   const [panchayaths, setPanchayaths] = useState<Panchayath[]>([]);
   const [agentMap, setAgentMap] = useState<Record<string, RoleCounts>>({});
+  const [leadersMap, setLeadersMap] = useState<Record<string, AgentLite[]>>({});
+  const [partnersMap, setPartnersMap] = useState<Record<string, AgentLite[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -41,20 +52,33 @@ export default function Panchayaths() {
     (async () => {
       const [{ data: pData }, { data: aData }] = await Promise.all([
         supabase.from("panchayaths").select("id, name, name_ml, district, state").eq("is_active", true).order("name"),
-        supabase.from("pennyekart_agents").select("panchayath_id, role").eq("is_active", true),
+        supabase.from("pennyekart_agents").select("id, name, mobile, role, panchayath_id, responsible_panchayath_ids").eq("is_active", true),
       ]);
       const map: Record<string, RoleCounts> = {};
+      const leaders: Record<string, AgentLite[]> = {};
+      const partners: Record<string, AgentLite[]> = {};
       (aData || []).forEach((a: any) => {
-        if (!a.panchayath_id) return;
-        if (!map[a.panchayath_id]) map[a.panchayath_id] = { coordinator: 0, team_leader: 0, group_leader: 0, pro: 0, total: 0 };
-        if (a.role in map[a.panchayath_id]) (map[a.panchayath_id] as any)[a.role]++;
-        map[a.panchayath_id].total++;
+        if (a.panchayath_id) {
+          if (!map[a.panchayath_id]) map[a.panchayath_id] = { coordinator: 0, team_leader: 0, group_leader: 0, pro: 0, total: 0 };
+          if (a.role in map[a.panchayath_id]) (map[a.panchayath_id] as any)[a.role]++;
+          map[a.panchayath_id].total++;
+        }
+        if (a.role === "team_leader" && a.panchayath_id) {
+          (leaders[a.panchayath_id] ||= []).push(a);
+        }
+        if (a.role === "super_admin_partner") {
+          const ids = new Set<string>([a.panchayath_id, ...(a.responsible_panchayath_ids || [])].filter(Boolean));
+          ids.forEach((pid) => (partners[pid] ||= []).push(a));
+        }
       });
       setAgentMap(map);
+      setLeadersMap(leaders);
+      setPartnersMap(partners);
       setPanchayaths(pData || []);
       setLoading(false);
     })();
   }, []);
+
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
