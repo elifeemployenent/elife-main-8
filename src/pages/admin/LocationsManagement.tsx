@@ -81,6 +81,8 @@ export default function LocationsManagement() {
   const [panchayathDistrict, setPanchayathDistrict] = useState("");
   const [panchayathWard, setPanchayathWard] = useState<number | "">("");
   const [panchayathState, setPanchayathState] = useState("Kerala");
+  const [panchayathCode, setPanchayathCode] = useState("");
+
 
   // Cluster form state
   const [clusterName, setClusterName] = useState("");
