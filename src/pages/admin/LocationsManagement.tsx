@@ -479,6 +479,20 @@ export default function LocationsManagement() {
                       </p>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="panchayathCode">Panchayath Number / Code</Label>
+                      <Input
+                        id="panchayathCode"
+                        value={panchayathCode}
+                        onChange={(e) => setPanchayathCode(e.target.value)}
+                        placeholder="e.g., LSGI code or custom number"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Optional. Manually enter the official panchayath number or code.
+                      </p>
+                    </div>
+
+
                     <DialogFooter>
                       <Button
                         type="button"
