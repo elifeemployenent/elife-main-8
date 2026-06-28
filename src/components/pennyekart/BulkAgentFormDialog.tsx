@@ -728,7 +728,7 @@ function SingleFormContent({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {ROLE_HIERARCHY.map((role) => (
+                    {ALL_ROLES.map((role) => (
                       <SelectItem key={role} value={role}>
                         {ROLE_LABELS[role]}
                       </SelectItem>
