@@ -18,7 +18,25 @@ const navLinks = [
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+
+  const handleHomeClick = (e: React.MouseEvent, closeMenu = false) => {
+    if (closeMenu) setIsMenuOpen(false);
+    let verified = false;
+    try {
+      verified = localStorage.getItem("elife_gate_status") === "verified";
+    } catch {}
+    if (!verified) {
+      e.preventDefault();
+      resetMobileGate();
+      return;
+    }
+    if (location.pathname === "/") {
+      e.preventDefault();
+      navigate(0 as never);
+    }
+  };
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
