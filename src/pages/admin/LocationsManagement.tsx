@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, ArrowLeft, AlertCircle, MapPin, Building } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, AlertCircle, MapPin, Building, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -74,6 +74,7 @@ export default function LocationsManagement() {
   const [isClusterDialogOpen, setIsClusterDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [editingPanchayath, setEditingPanchayath] = useState<Panchayath | null>(null);
 
   // Panchayath form state
   const [panchayathName, setPanchayathName] = useState("");
@@ -174,7 +175,7 @@ export default function LocationsManagement() {
     loadData();
   }, [adminToken]);
 
-  const handleCreatePanchayath = async (e: React.FormEvent) => {
+  const handlePanchayathSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -189,33 +190,58 @@ export default function LocationsManagement() {
         code: panchayathCode.trim() || null,
       };
 
+      if (editingPanchayath) {
+        // Update existing
+        if (adminToken) {
+          const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=update", {
+            method: "PATCH",
+            headers: { "x-admin-token": adminToken },
+            body: { id: editingPanchayath.id, ...panchayathData },
+          });
 
-      if (adminToken) {
-        const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=create", {
-          method: "POST",
-          headers: { "x-admin-token": adminToken },
-          body: panchayathData,
+          if (response.error) throw new Error(response.error.message);
+        } else {
+          const { error: updateError } = await supabase
+            .from("panchayaths")
+            .update(panchayathData)
+            .eq("id", editingPanchayath.id);
+
+          if (updateError) throw updateError;
+        }
+
+        toast({
+          title: "Panchayath updated",
+          description: "Panchayath details have been updated successfully.",
         });
-        
-        if (response.error) throw new Error(response.error.message);
       } else {
-        const { error: insertError } = await supabase
-          .from("panchayaths")
-          .insert(panchayathData);
+        // Create new
+        if (adminToken) {
+          const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=create", {
+            method: "POST",
+            headers: { "x-admin-token": adminToken },
+            body: panchayathData,
+          });
 
-        if (insertError) throw insertError;
+          if (response.error) throw new Error(response.error.message);
+        } else {
+          const { error: insertError } = await supabase
+            .from("panchayaths")
+            .insert(panchayathData);
+
+          if (insertError) throw insertError;
+        }
+
+        toast({
+          title: "Panchayath created",
+          description: "New panchayath has been added successfully.",
+        });
       }
-
-      toast({
-        title: "Panchayath created",
-        description: "New panchayath has been added successfully.",
-      });
 
       setIsPanchayathDialogOpen(false);
       resetPanchayathForm();
       fetchPanchayaths();
     } catch (err: any) {
-      setError(err.message || "Failed to create panchayath");
+      setError(err.message || (editingPanchayath ? "Failed to update panchayath" : "Failed to create panchayath"));
     } finally {
       setIsSubmitting(false);
     }
@@ -275,7 +301,19 @@ export default function LocationsManagement() {
     setPanchayathWard("");
     setPanchayathState("Kerala");
     setPanchayathCode("");
+    setEditingPanchayath(null);
     setError("");
+  };
+
+  const openEditDialog = (panchayath: Panchayath) => {
+    setPanchayathName(panchayath.name);
+    setPanchayathNameMl(panchayath.name_ml || "");
+    setPanchayathDistrict(panchayath.district || "");
+    setPanchayathWard(panchayath.ward ? Number(panchayath.ward) : "");
+    setPanchayathState(panchayath.state || "Kerala");
+    setPanchayathCode(panchayath.code || "");
+    setEditingPanchayath(panchayath);
+    setIsPanchayathDialogOpen(true);
   };
 
 
@@ -408,12 +446,12 @@ export default function LocationsManagement() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Panchayath</DialogTitle>
+                    <DialogTitle>{editingPanchayath ? "Edit Panchayath" : "Add New Panchayath"}</DialogTitle>
                     <DialogDescription>
-                      Add a new panchayath with ward details
+                      {editingPanchayath ? "Update panchayath details" : "Add a new panchayath with ward details"}
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleCreatePanchayath} className="space-y-4">
+                  <form onSubmit={handlePanchayathSubmit} className="space-y-4">
                     {error && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
@@ -505,10 +543,10 @@ export default function LocationsManagement() {
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating...
+                            {editingPanchayath ? "Saving..." : "Creating..."}
                           </>
                         ) : (
-                          "Create Panchayath"
+                          editingPanchayath ? "Save Changes" : "Create Panchayath"
                         )}
                       </Button>
                     </DialogFooter>
@@ -561,13 +599,23 @@ export default function LocationsManagement() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => togglePanchayathStatus(panchayath.id, panchayath.is_active ?? true)}
-                          >
-                            {panchayath.is_active ? "Deactivate" : "Activate"}
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(panchayath)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => togglePanchayathStatus(panchayath.id, panchayath.is_active ?? true)}
+                            >
+                              {panchayath.is_active ? "Deactivate" : "Activate"}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
