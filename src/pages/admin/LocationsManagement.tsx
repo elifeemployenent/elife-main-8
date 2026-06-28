@@ -175,7 +175,7 @@ export default function LocationsManagement() {
     loadData();
   }, [adminToken]);
 
-  const handleCreatePanchayath = async (e: React.FormEvent) => {
+  const handlePanchayathSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -190,33 +190,58 @@ export default function LocationsManagement() {
         code: panchayathCode.trim() || null,
       };
 
+      if (editingPanchayath) {
+        // Update existing
+        if (adminToken) {
+          const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=update", {
+            method: "PATCH",
+            headers: { "x-admin-token": adminToken },
+            body: { id: editingPanchayath.id, ...panchayathData },
+          });
 
-      if (adminToken) {
-        const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=create", {
-          method: "POST",
-          headers: { "x-admin-token": adminToken },
-          body: panchayathData,
+          if (response.error) throw new Error(response.error.message);
+        } else {
+          const { error: updateError } = await supabase
+            .from("panchayaths")
+            .update(panchayathData)
+            .eq("id", editingPanchayath.id);
+
+          if (updateError) throw updateError;
+        }
+
+        toast({
+          title: "Panchayath updated",
+          description: "Panchayath details have been updated successfully.",
         });
-        
-        if (response.error) throw new Error(response.error.message);
       } else {
-        const { error: insertError } = await supabase
-          .from("panchayaths")
-          .insert(panchayathData);
+        // Create new
+        if (adminToken) {
+          const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=create", {
+            method: "POST",
+            headers: { "x-admin-token": adminToken },
+            body: panchayathData,
+          });
 
-        if (insertError) throw insertError;
+          if (response.error) throw new Error(response.error.message);
+        } else {
+          const { error: insertError } = await supabase
+            .from("panchayaths")
+            .insert(panchayathData);
+
+          if (insertError) throw insertError;
+        }
+
+        toast({
+          title: "Panchayath created",
+          description: "New panchayath has been added successfully.",
+        });
       }
-
-      toast({
-        title: "Panchayath created",
-        description: "New panchayath has been added successfully.",
-      });
 
       setIsPanchayathDialogOpen(false);
       resetPanchayathForm();
       fetchPanchayaths();
     } catch (err: any) {
-      setError(err.message || "Failed to create panchayath");
+      setError(err.message || (editingPanchayath ? "Failed to update panchayath" : "Failed to create panchayath"));
     } finally {
       setIsSubmitting(false);
     }
