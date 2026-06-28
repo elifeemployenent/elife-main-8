@@ -544,7 +544,9 @@ export default function LocationsManagement() {
                       <TableRow key={panchayath.id}>
                         <TableCell className="font-medium">{panchayath.name}</TableCell>
                         <TableCell>{panchayath.name_ml || "-"}</TableCell>
+                        <TableCell className="font-mono text-xs">{panchayath.code || "-"}</TableCell>
                         <TableCell>{panchayath.state || "Kerala"}</TableCell>
+
                         <TableCell>{panchayath.district || "-"}</TableCell>
                         <TableCell>{panchayath.ward || "-"}</TableCell>
                         <TableCell>
