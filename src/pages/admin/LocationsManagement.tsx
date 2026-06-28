@@ -186,7 +186,9 @@ export default function LocationsManagement() {
         district: panchayathDistrict.trim() || null,
         ward: panchayathWard ? String(panchayathWard) : null,
         state: panchayathState.trim() || "Kerala",
+        code: panchayathCode.trim() || null,
       };
+
 
       if (adminToken) {
         const response = await supabase.functions.invoke("admin-locations?resource=panchayaths&action=create", {
