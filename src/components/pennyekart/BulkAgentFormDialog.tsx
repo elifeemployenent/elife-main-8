@@ -40,6 +40,7 @@ import {
   AgentRole, 
   ROLE_LABELS, 
   ROLE_HIERARCHY,
+  ALL_ROLES,
   getParentRole,
   useAgentMutations,
 } from "@/hooks/usePennyekartAgents";
