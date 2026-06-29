@@ -248,14 +248,15 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess, lockedPa
         name: "",
         mobile: "",
         role: "pro",
-        panchayath_id: "",
+        panchayath_id: lockedPanchayathId || "",
         ward: "",
         parent_agent_id: null,
         customer_count: 0,
         responsible_panchayath_ids: [],
       });
     }
-  }, [open, agent, form]);
+  }, [open, agent, form, lockedPanchayathId]);
+
 
   const onSubmit = async (values: AgentFormValues) => {
     // Top-level roles (team leader / super admin / business partner) don't have parents
