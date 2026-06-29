@@ -149,7 +149,7 @@ export default function Panchayaths() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search panchayath, district…"
+            placeholder="Search panchayath, district, code…"
             className="pl-9"
           />
         </div>
