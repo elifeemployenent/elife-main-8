@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { PanchayathAgentsDialog } from "@/components/panchayath/PanchayathAgentsDialog";
 
 interface Panchayath {
   id: string;
@@ -86,6 +87,8 @@ export default function Panchayaths() {
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
   const [sortBy, setSortBy] = useState<SortKey>("code");
+  const [selected, setSelected] = useState<Panchayath | null>(null);
+
 
   useEffect(() => {
     (async () => {
@@ -282,7 +285,12 @@ export default function Panchayaths() {
             {filtered.map((p) => {
               const counts = metricsMap[p.id] || emptyMetrics();
               return (
-                <Card key={p.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-kerala-green">
+                <Card
+                  key={p.id}
+                  onClick={() => setSelected(p)}
+                  className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all border-l-4 border-l-kerala-green"
+                >
+
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-start justify-between gap-2">
                       <div>
@@ -345,7 +353,7 @@ export default function Panchayaths() {
                           {partnersMap[p.id].map((a) => (
                             <li key={a.id} className="flex items-center justify-between text-xs">
                               <span className="font-medium text-amber-900 dark:text-amber-200">{a.name}</span>
-                              <a href={`tel:${a.mobile}`} className="text-[11px] font-mono text-amber-700 dark:text-amber-300 hover:underline">{a.mobile}</a>
+                              <a href={`tel:${a.mobile}`} onClick={(e) => e.stopPropagation()} className="text-[11px] font-mono text-amber-700 dark:text-amber-300 hover:underline">{a.mobile}</a>
                             </li>
                           ))}
                         </ul>
@@ -364,7 +372,7 @@ export default function Panchayaths() {
                           {leadersMap[p.id].map((a) => (
                             <li key={a.id} className="flex items-center justify-between text-xs">
                               <span className="font-medium text-blue-900 dark:text-blue-200">{a.name}</span>
-                              <a href={`tel:${a.mobile}`} className="text-[11px] font-mono text-blue-700 dark:text-blue-300 hover:underline">{a.mobile}</a>
+                              <a href={`tel:${a.mobile}`} onClick={(e) => e.stopPropagation()} className="text-[11px] font-mono text-blue-700 dark:text-blue-300 hover:underline">{a.mobile}</a>
                             </li>
                           ))}
                         </ul>
@@ -377,6 +385,12 @@ export default function Panchayaths() {
           </div>
         )}
       </div>
+      <PanchayathAgentsDialog
+        panchayath={selected}
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+      />
     </Layout>
+
   );
 }

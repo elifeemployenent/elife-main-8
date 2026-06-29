@@ -132,14 +132,14 @@ function buildHierarchyTree(agents: PennyekartAgent[]): PennyekartAgent[] {
   return rootAgents;
 }
 
-export function useAgentMutations() {
+export function useAgentMutations(callerMobile?: string) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const callEdgeFunction = async (method: string, body?: object, params?: Record<string, string>) => {
     const adminToken = getAdminToken();
     const accessToken = await getSupabaseAccessToken();
-    if (!adminToken && !accessToken) {
-      throw new Error("Not authenticated as admin");
+    if (!adminToken && !accessToken && !callerMobile) {
+      throw new Error("Not authenticated");
     }
 
     const url = new URL(`${import.meta.env.VITE_SUPABASE_URL || 'https://qnucqwniloioxsowdqzj.supabase.co'}/functions/v1/pennyekart-agents`);
@@ -153,6 +153,9 @@ export function useAgentMutations() {
     };
     if (adminToken) headers["x-admin-token"] = adminToken;
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+    if (callerMobile) headers["x-caller-mobile"] = callerMobile;
+
+
 
     const response = await fetch(url.toString(), {
       method,

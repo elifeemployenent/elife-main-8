@@ -1,52 +1,45 @@
-# Plan: Filters & Counts on /panchayaths
+## Goal
+On `/panchayaths`, make each panchayath card clickable to open a detail dialog showing all agents of that panchayath (fetched from `pennyekart_agents`). Allow adding/editing agents — restricted to Team Leaders and Super Admin / Business Partners of that panchayath.
 
-Enhance the public `/panchayaths` page so each panchayath card surfaces useful metrics and visitors can filter/sort by them.
+## Identity
+Use the existing MobileGate session (`elife_gate_status` / saved mobile in localStorage). On open, look up `pennyekart_agents` by that mobile:
+- If role is `super_admin_partner` OR `team_leader` AND the agent's `panchayath_id` matches (or the panchayath id is in `responsible_panchayath_ids`) → show Add / Edit buttons.
+- Otherwise → details are read-only.
+- If no mobile is saved → trigger the existing mobile gate prompt before opening edit actions.
 
-## Data to fetch (per panchayath)
-For each panchayath, compute:
-- Agent counts by role from `pennyekart_agents`:
-  - PRO
-  - Group Leader
-  - Coordinator
-  - Team Leader
-- Customers count from `cash_collections` (unique mobile / row count scoped to that panchayath)
-- Program registrations count from `program_registrations`
+## UI changes — `src/pages/Panchayaths.tsx`
+- Wrap each panchayath card with an `onClick` that opens a new `PanchayathAgentsDialog`.
+- Keep existing leader / partner badges visible on the card.
 
-Fetch strategy: a single batched query per metric grouped by `panchayath_id`, merged client-side into the panchayath list (avoids N+1).
+## New component — `src/components/panchayath/PanchayathAgentsDialog.tsx`
+- Props: `panchayath` (id + name).
+- Fetches all agents for the panchayath via direct Supabase select (RLS allows authenticated read; for public visitors, use the existing public read pattern already used by the page).
+- Lists agents grouped by role (Super Admin/Partner → Team Leader → Coordinator → Group Leader → PRO) with name, mobile (click-to-call), ward, parent.
+- Header shows access state:
+  - "View only" badge for non-privileged viewers.
+  - "Add Agent" + per-row "Edit" buttons for privileged viewers (TL / Super Admin of that panchayath).
+- Reuses existing `AgentFormDialog` from `src/components/pennyekart/` for add/edit; pre-fills `panchayath_id` and locks it.
 
-## UI changes on each card
-Show a compact metric row with badges:
-`PRO 12 · GL 4 · Coord 2 · TL 1 · Customers 87 · Registrations 34`
+## Permission logic — new helper `src/lib/panchayathAccess.ts`
+```
+canManagePanchayath(mobile, panchayathId) → Promise<boolean>
+```
+Queries `pennyekart_agents` where `mobile = ?` AND `role IN ('super_admin_partner','team_leader')` AND (`panchayath_id = ?` OR `panchayathId = ANY(responsible_panchayath_ids)`).
 
-Zero values shown muted.
-
-## Filter bar (above grid)
-1. **Filter chips (multi-select, OR within group, AND across groups)** — hide panchayaths whose count is 0 for any selected chip:
-   - Has PRO
-   - Has Group Leader
-   - Has Coordinator
-   - Has Team Leader
-   - Has Customers
-   - Has Registrations
-2. **Sort dropdown** — replaces current default code sort when chosen:
-   - Code (default, current behavior)
-   - Name (A–Z)
-   - Most PROs
-   - Most Group Leaders
-   - Most Coordinators
-   - Most Team Leaders
-   - Most Customers
-   - Most Registrations
-3. Existing search box stays.
-4. "Clear filters" link when any chip/sort active.
+## Mutations
+Reuse `useAgentMutations` (`pennyekart-agents` edge function). Authentication:
+- Privileged public users don't have an admin token. Update `supabase/functions/pennyekart-agents/index.ts` to accept a `caller_mobile` field on create/update and verify server-side that the caller is a Team Leader or Super Admin/Business Partner with scope over the target panchayath. Reject otherwise.
+- No DB schema changes required.
 
 ## Technical notes
-- File: `src/pages/Panchayaths.tsx` only (UI + data merge).
-- Counts loaded in parallel with existing fetch via `Promise.all`, using `.select('panchayath_id, role', { count: 'exact', head: false })` style group queries or RPC-less client-side aggregation by selecting `panchayath_id` columns and tallying.
-- Store metrics in a `Record<panchayathId, Metrics>` map; derive filtered+sorted list with `useMemo`.
-- No schema/migration changes.
-- No changes to other routes.
+- Reuse `SearchableSelect`, `Dialog`, `Card`, `Badge` primitives.
+- Filter the agents query by `panchayath_id` directly (no need to fetch all).
+- Show parent agent's name by joining `parent_agent:pennyekart_agents!parent_agent_id(name,role)`.
+- Click-to-call: `tel:` links on mobile numbers.
+- Keep existing public read access on `pennyekart_agents` (already in place since `/panchayaths` page already shows leaders/partners).
 
-## Out of scope
-- No new admin tooling.
-- No edits to agent/registration data models.
+## Files touched
+- `src/pages/Panchayaths.tsx` (make cards clickable, mount dialog)
+- `src/components/panchayath/PanchayathAgentsDialog.tsx` (new)
+- `src/lib/panchayathAccess.ts` (new)
+- `supabase/functions/pennyekart-agents/index.ts` (accept + verify `caller_mobile` for add/edit when no admin token)

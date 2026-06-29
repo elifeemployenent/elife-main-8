@@ -84,6 +84,10 @@ interface AgentFormDialogProps {
   onOpenChange: (open: boolean) => void;
   agent?: PennyekartAgent | null;
   onSuccess: () => void;
+  /** When set, the panchayath_id is pre-filled and locked (cannot be changed). */
+  lockedPanchayathId?: string;
+  /** When set, mutations are sent with x-caller-mobile (for non-admin TL/Super Admin sessions). */
+  callerMobile?: string;
 }
 
 interface Panchayath {
@@ -91,14 +95,15 @@ interface Panchayath {
   name: string;
 }
 
-export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentFormDialogProps) {
+export function AgentFormDialog({ open, onOpenChange, agent, onSuccess, lockedPanchayathId, callerMobile }: AgentFormDialogProps) {
   const [panchayaths, setPanchayaths] = useState<Panchayath[]>([]);
   const [potentialParents, setPotentialParents] = useState<PennyekartAgent[]>([]);
   const [isLoadingPanchayaths, setIsLoadingPanchayaths] = useState(false);
   const [panchayathPopoverOpen, setPanchayathPopoverOpen] = useState(false);
   const [availableWards, setAvailableWards] = useState<string[]>([]);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
-  const { createAgent, updateAgent, isSubmitting } = useAgentMutations();
+  const { createAgent, updateAgent, isSubmitting } = useAgentMutations(callerMobile);
+
 
   const isEditing = !!agent;
 
@@ -243,14 +248,15 @@ export function AgentFormDialog({ open, onOpenChange, agent, onSuccess }: AgentF
         name: "",
         mobile: "",
         role: "pro",
-        panchayath_id: "",
+        panchayath_id: lockedPanchayathId || "",
         ward: "",
         parent_agent_id: null,
         customer_count: 0,
         responsible_panchayath_ids: [],
       });
     }
-  }, [open, agent, form]);
+  }, [open, agent, form, lockedPanchayathId]);
+
 
   const onSubmit = async (values: AgentFormValues) => {
     // Top-level roles (team leader / super admin / business partner) don't have parents
