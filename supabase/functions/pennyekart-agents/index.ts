@@ -222,6 +222,23 @@ serve(async (req) => {
     // POST - Create agent
     if (req.method === "POST" && action === "create") {
       const { agent } = body;
+
+      // Caller-mobile (public TL/Super Admin) scope checks
+      if (caller) {
+        if (!callerHasPanchayathScope(caller, agent.panchayath_id)) {
+          return new Response(
+            JSON.stringify({ error: "Forbidden - You can only add agents within your allocated panchayath" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Team Leaders cannot create Super Admin/Business Partners or other Team Leaders
+        if (caller.role === "team_leader" && (agent.role === "super_admin_partner" || agent.role === "team_leader")) {
+          return new Response(
+            JSON.stringify({ error: "Forbidden - Team Leaders cannot create this role" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
       
       // Duplicate check: look for existing agent with same mobile in same panchayath
       const { data: existing } = await supabase
@@ -248,7 +265,7 @@ serve(async (req) => {
         .from("pennyekart_agents")
         .insert({
           ...agent,
-          created_by: admin.admin_id,
+          created_by: admin?.admin_id ?? null,
         })
         .select()
         .single();
@@ -331,6 +348,34 @@ serve(async (req) => {
           JSON.stringify({ error: "Missing id or agent data" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+
+      // Caller-mobile scope checks (public TL / Super Admin)
+      if (caller) {
+        const { data: target } = await supabase
+          .from("pennyekart_agents")
+          .select("panchayath_id, role")
+          .eq("id", id)
+          .single();
+        if (!target) {
+          return new Response(
+            JSON.stringify({ error: "Agent not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (!callerHasPanchayathScope(caller, target.panchayath_id) ||
+            !callerHasPanchayathScope(caller, agent.panchayath_id)) {
+          return new Response(
+            JSON.stringify({ error: "Forbidden - Agent is outside your allocated panchayath" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (caller.role === "team_leader" && (target.role === "super_admin_partner" || target.role === "team_leader" || agent.role === "super_admin_partner" || agent.role === "team_leader")) {
+          return new Response(
+            JSON.stringify({ error: "Forbidden - Team Leaders cannot edit this role" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
 
       // Remove fields that shouldn't be updated
