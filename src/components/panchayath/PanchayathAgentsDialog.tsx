@@ -9,7 +9,6 @@ import {
   PennyekartAgent,
   AgentRole,
   ROLE_LABELS,
-  ROLE_HIERARCHY,
 } from "@/hooks/usePennyekartAgents";
 import { checkPanchayathAccess, PanchayathAccess } from "@/lib/panchayathAccess";
 import { resetMobileGate } from "@/components/MobileGate";
