@@ -219,6 +219,18 @@ serve(async (req) => {
       });
     }
 
+    // Caller-mobile sessions may only create / update agents
+    if (caller && !admin) {
+      const allowed = (req.method === "POST" && action === "create") || req.method === "PUT";
+      if (!allowed) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden - This action requires an admin session" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+
     // POST - Create agent
     if (req.method === "POST" && action === "create") {
       const { agent } = body;
