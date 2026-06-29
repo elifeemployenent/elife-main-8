@@ -52,7 +52,7 @@ export function DirectCustomerFormDialog({ open, onOpenChange, initialCustomer, 
       return;
     }
     setSubmitting(true);
-    const { error } = await onSubmit(parsed.data);
+    const { error } = await onSubmit(parsed.data as DirectCustomerInput);
     setSubmitting(false);
     if (error) {
       toast.error(error);
