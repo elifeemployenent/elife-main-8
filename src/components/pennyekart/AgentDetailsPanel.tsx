@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
   Network,
   Calendar,
   Shield,
+  Contact,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -35,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AgentDirectCustomersDialog } from "./AgentDirectCustomersDialog";
 
 interface AgentDetailsPanelProps {
   agent: PennyekartAgent;
@@ -71,6 +74,8 @@ export function AgentDetailsPanel({
   onAddChild,
   onClose 
 }: AgentDetailsPanelProps) {
+  const [customersOpen, setCustomersOpen] = useState(false);
+  const canHaveDirectCustomers = agent.role === "coordinator" || agent.role === "group_leader" || agent.role === "pro";
   const childRole = getChildRole(agent.role);
   const directReports = allAgents.filter(a => a.parent_agent_id === agent.id);
   const parentAgent = allAgents.find(a => a.id === agent.parent_agent_id);
@@ -243,6 +248,13 @@ export function AgentDetailsPanel({
             </Button>
           )}
 
+          {canHaveDirectCustomers && (
+            <Button variant="outline" onClick={() => setCustomersOpen(true)} className="w-full" size="sm">
+              <Contact className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
+              Direct Customers
+            </Button>
+          )}
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="w-full" size="sm">
@@ -272,6 +284,14 @@ export function AgentDetailsPanel({
           </AlertDialog>
         </div>
       </CardContent>
+
+      {canHaveDirectCustomers && (
+        <AgentDirectCustomersDialog
+          open={customersOpen}
+          onOpenChange={setCustomersOpen}
+          agent={agent}
+        />
+      )}
     </Card>
   );
 }

@@ -114,6 +114,50 @@ export type Database = {
           },
         ]
       }
+      agent_direct_customers: {
+        Row: {
+          address: string | null
+          agent_id: string
+          created_at: string
+          id: string
+          mobile: string
+          name: string
+          notes: string | null
+          updated_at: string
+          ward: string | null
+        }
+        Insert: {
+          address?: string | null
+          agent_id: string
+          created_at?: string
+          id?: string
+          mobile: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          ward?: string | null
+        }
+        Update: {
+          address?: string | null
+          agent_id?: string
+          created_at?: string
+          id?: string
+          mobile?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          ward?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_direct_customers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_wallet_transactions: {
         Row: {
           agent_id: string

@@ -162,6 +162,15 @@ serve(async (req) => {
     let isSuperAdmin = false;
     let caller: CallerAgent | null = null;
 
+    // Peek body early so we can route direct-customer actions with their own auth.
+    const rawBody = req.method !== "GET" && req.method !== "DELETE" ? await req.text() : "";
+    const parsedBody = rawBody ? JSON.parse(rawBody) : null;
+    const peekAction = parsedBody?.action as string | undefined;
+    const isDirectCustomerAction = peekAction === "list_customers" ||
+      peekAction === "add_customer" ||
+      peekAction === "update_customer" ||
+      peekAction === "delete_customer";
+
     if (adminToken || authHeader) {
       const result = await verifyAdmin(adminToken, authHeader);
       if (!result.valid || !result.admin) {
@@ -172,6 +181,8 @@ serve(async (req) => {
       }
       admin = result.admin;
       isSuperAdmin = !!result.isSuperAdmin;
+    } else if (callerMobile && isDirectCustomerAction) {
+      // Direct-customer self-service: validated inside the action handler.
     } else if (callerMobile) {
       caller = await getCallerAgent(callerMobile.replace(/\D/g, ""));
       if (!caller) {
@@ -189,12 +200,143 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const url = new URL(req.url);
-    const body = req.method !== "GET" && req.method !== "DELETE" 
-      ? await req.json() 
-      : null;
-    
+    const body = parsedBody;
     const { action } = body || {};
     const agentId = url.searchParams.get("id");
+
+    // ── Direct customers (coordinator / group_leader / pro) ──
+    if (isDirectCustomerAction) {
+      const ALLOWED_ROLES = ["coordinator", "group_leader", "pro"];
+      const normalizedCaller = callerMobile ? callerMobile.replace(/\D/g, "") : null;
+
+      async function fetchAgentForCustomer(targetAgentId: string) {
+        const { data } = await supabase
+          .from("pennyekart_agents")
+          .select("id, role, mobile, is_active")
+          .eq("id", targetAgentId)
+          .maybeSingle();
+        return data;
+      }
+
+      function assertAuthorized(targetAgentRow: { mobile: string; role: string; is_active: boolean } | null) {
+        if (!targetAgentRow) return { ok: false, status: 404, error: "Agent not found" };
+        if (!ALLOWED_ROLES.includes(targetAgentRow.role)) {
+          return { ok: false, status: 400, error: "Direct customers are only available for Coordinator, Group Leader, or PRO agents" };
+        }
+        if (admin) return { ok: true };
+        if (normalizedCaller && normalizedCaller === targetAgentRow.mobile && targetAgentRow.is_active) {
+          return { ok: true };
+        }
+        return { ok: false, status: 403, error: "Forbidden" };
+      }
+
+      function validateCustomer(c: any): { ok: true; value: { name: string; mobile: string; ward: string | null; address: string | null; notes: string | null } } | { ok: false; error: string } {
+        if (!c || typeof c !== "object") return { ok: false, error: "Missing customer" };
+        const name = String(c.name || "").trim();
+        const mobile = String(c.mobile || "").replace(/\D/g, "");
+        const ward = c.ward != null ? String(c.ward).trim() : "";
+        const address = c.address != null ? String(c.address).trim() : "";
+        const notes = c.notes != null ? String(c.notes).trim() : "";
+        if (name.length < 1 || name.length > 100) return { ok: false, error: "Name must be 1-100 characters" };
+        if (mobile.length !== 10) return { ok: false, error: "Mobile must be 10 digits" };
+        if (ward.length > 50) return { ok: false, error: "Ward must be ≤ 50 characters" };
+        if (address.length > 300) return { ok: false, error: "Address must be ≤ 300 characters" };
+        if (notes.length > 500) return { ok: false, error: "Notes must be ≤ 500 characters" };
+        return { ok: true, value: { name, mobile, ward: ward || null, address: address || null, notes: notes || null } };
+      }
+
+      function jsonResp(payload: unknown, status = 200) {
+        return new Response(JSON.stringify(payload), {
+          status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (action === "list_customers") {
+        const targetAgentId = body?.agent_id;
+        if (!targetAgentId) return jsonResp({ error: "Missing agent_id" }, 400);
+        // List is public read; still verify agent exists and role allowed.
+        const targetAgent = await fetchAgentForCustomer(targetAgentId);
+        if (!targetAgent) return jsonResp({ error: "Agent not found" }, 404);
+        if (!ALLOWED_ROLES.includes(targetAgent.role)) {
+          return jsonResp({ data: [] });
+        }
+        const { data, error } = await supabase
+          .from("agent_direct_customers")
+          .select("*")
+          .eq("agent_id", targetAgentId)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return jsonResp({ data });
+      }
+
+      if (action === "add_customer") {
+        const targetAgentId = body?.agent_id;
+        if (!targetAgentId) return jsonResp({ error: "Missing agent_id" }, 400);
+        const targetAgent = await fetchAgentForCustomer(targetAgentId);
+        const authz = assertAuthorized(targetAgent as any);
+        if (!authz.ok) return jsonResp({ error: authz.error }, authz.status);
+        const v = validateCustomer(body?.customer);
+        if (!v.ok) return jsonResp({ error: v.error }, 400);
+        const { data, error } = await supabase
+          .from("agent_direct_customers")
+          .insert({ agent_id: targetAgentId, ...v.value })
+          .select()
+          .single();
+        if (error) {
+          if (error.code === "23505") return jsonResp({ error: "This mobile is already in your customer list" }, 400);
+          throw error;
+        }
+        return jsonResp({ data });
+      }
+
+      if (action === "update_customer") {
+        const id = body?.id;
+        if (!id) return jsonResp({ error: "Missing id" }, 400);
+        const { data: existing } = await supabase
+          .from("agent_direct_customers")
+          .select("agent_id")
+          .eq("id", id)
+          .maybeSingle();
+        if (!existing) return jsonResp({ error: "Customer not found" }, 404);
+        const targetAgent = await fetchAgentForCustomer(existing.agent_id);
+        const authz = assertAuthorized(targetAgent as any);
+        if (!authz.ok) return jsonResp({ error: authz.error }, authz.status);
+        const v = validateCustomer(body?.customer);
+        if (!v.ok) return jsonResp({ error: v.error }, 400);
+        const { data, error } = await supabase
+          .from("agent_direct_customers")
+          .update(v.value)
+          .eq("id", id)
+          .select()
+          .single();
+        if (error) {
+          if (error.code === "23505") return jsonResp({ error: "This mobile is already in your customer list" }, 400);
+          throw error;
+        }
+        return jsonResp({ data });
+      }
+
+      if (action === "delete_customer") {
+        const id = body?.id;
+        if (!id) return jsonResp({ error: "Missing id" }, 400);
+        const { data: existing } = await supabase
+          .from("agent_direct_customers")
+          .select("agent_id")
+          .eq("id", id)
+          .maybeSingle();
+        if (!existing) return jsonResp({ error: "Customer not found" }, 404);
+        const targetAgent = await fetchAgentForCustomer(existing.agent_id);
+        const authz = assertAuthorized(targetAgent as any);
+        if (!authz.ok) return jsonResp({ error: authz.error }, authz.status);
+        const { error } = await supabase
+          .from("agent_direct_customers")
+          .delete()
+          .eq("id", id);
+        if (error) throw error;
+        return jsonResp({ success: true });
+      }
+    }
 
     // GET - List agents
     if (req.method === "GET") {
