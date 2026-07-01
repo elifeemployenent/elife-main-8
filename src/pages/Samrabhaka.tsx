@@ -122,9 +122,46 @@ export default function Samrabhaka() {
             </CardContent>
           </Card>
 
-          <div className="mt-6">
-            <ProjectsSection token={token} />
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FeatureTile
+              icon={<ListChecks className="h-6 w-6" />}
+              title="Your Tasks"
+              description="View and manage your assigned tasks"
+              onClick={() => setOpenFeature("tasks")}
+            />
+            <FeatureTile
+              icon={<Briefcase className="h-6 w-6" />}
+              title="My Projects"
+              description="Your entrepreneurship projects"
+              onClick={() => setOpenFeature("projects")}
+            />
           </div>
+
+          <Dialog open={openFeature === "projects"} onOpenChange={(o) => !o && setOpenFeature(null)}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-pink-600" /> My Projects
+                </DialogTitle>
+                <DialogDescription>Your entrepreneurship projects</DialogDescription>
+              </DialogHeader>
+              <ProjectsSection token={token} />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={openFeature === "tasks"} onOpenChange={(o) => !o && setOpenFeature(null)}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-pink-600" /> Your Tasks
+                </DialogTitle>
+                <DialogDescription>Tasks assigned to you</DialogDescription>
+              </DialogHeader>
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                No tasks assigned yet. Check back soon.
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </Layout>
     );
