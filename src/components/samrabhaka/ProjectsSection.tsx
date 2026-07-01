@@ -305,3 +305,44 @@ export function ProjectsSection({ token }: { token: string }) {
     </Card>
   );
 }
+
+function ChoiceCard({
+  active,
+  onClick,
+  icon,
+  label,
+  sub,
+  special,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  sub?: string;
+  special?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative text-left rounded-lg border-2 p-3 transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-pink-400",
+        active
+          ? "border-pink-600 bg-gradient-to-br from-pink-100 to-pink-50 shadow-sm"
+          : "border-border bg-card hover:border-pink-300",
+        special && !active && "border-dashed border-pink-300 bg-pink-50/40",
+      )}
+    >
+      {active && (
+        <span className="absolute top-2 right-2 h-5 w-5 rounded-full bg-pink-600 text-white flex items-center justify-center">
+          <Check className="h-3 w-3" />
+        </span>
+      )}
+      <div className={cn("flex items-center gap-2", active ? "text-pink-700" : "text-foreground")}>
+        {icon}
+        <span className="font-medium text-sm">{label}</span>
+      </div>
+      {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+    </button>
+  );
+}
