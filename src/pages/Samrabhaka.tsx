@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useSamrabhakaAuth } from "@/hooks/useSamrabhakaAuth";
 import { toast } from "sonner";
 import { Loader2, LogOut, User, Phone, MapPin, Shield } from "lucide-react";
+import { ProjectsSection } from "@/components/samrabhaka/ProjectsSection";
 
 type Step = "mobile" | "register" | "login";
 
@@ -119,6 +120,10 @@ export default function Samrabhaka() {
               </div>
             </CardContent>
           </Card>
+
+          <div className="mt-6">
+            <ProjectsSection token={token} />
+          </div>
         </div>
       </Layout>
     );
