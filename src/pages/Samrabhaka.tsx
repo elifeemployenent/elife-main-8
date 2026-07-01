@@ -120,6 +120,10 @@ export default function Samrabhaka() {
               </div>
             </CardContent>
           </Card>
+
+          <div className="mt-6">
+            <ProjectsSection token={token} />
+          </div>
         </div>
       </Layout>
     );
