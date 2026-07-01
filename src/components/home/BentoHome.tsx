@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Sparkles, Users, Heart, Sprout, Target, Eye, MapPin, Calendar } from "lucide-react";
+import { ArrowUpRight, Sparkles, Users, Heart, Sprout, Target, Eye, MapPin, Calendar, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import farmelifeLogo from "@/assets/divisions/farmelife.png";
@@ -26,7 +26,7 @@ export function BentoHome({ afterHero }: { afterHero?: React.ReactNode } = {}) {
       <div className="container space-y-6 md:space-y-8">
         <div className="grid grid-cols-6 auto-rows-[minmax(120px,auto)] gap-3 md:gap-4">
           {/* Hero — large */}
-          <div className="col-span-6 relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground p-6 md:p-10 flex flex-col justify-between min-h-[340px]">
+          <div className="col-span-6 lg:col-span-4 relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground p-6 md:p-10 flex flex-col justify-between min-h-[340px]">
             <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-primary-foreground/10 blur-3xl" />
             <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-accent/30 blur-3xl" />
             <div className="relative">
@@ -52,6 +52,35 @@ export function BentoHome({ afterHero }: { afterHero?: React.ReactNode } = {}) {
               </Button>
             </div>
           </div>
+
+          {/* Samrambhaka.com agent entry */}
+          <Link
+            to="/samrambhaka"
+            className="group col-span-6 lg:col-span-2 relative flex flex-col justify-between rounded-3xl overflow-hidden p-6 md:p-8 text-white bg-gradient-to-br from-pink-500 via-pink-600 to-pink-700 hover:from-pink-600 hover:to-pink-800 shadow-xl border-4 border-white/20 min-h-[340px] transition-all hover:-translate-y-1"
+          >
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+              <div className="absolute top-4 right-4 w-32 h-32 bg-white rounded-full blur-3xl" />
+              <div className="absolute bottom-8 left-4 w-40 h-40 bg-yellow-300 rounded-full blur-3xl" />
+            </div>
+            <div className="relative">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-medium mb-4">
+                <Sparkles className="h-3 w-3" /> Agent Portal
+              </div>
+              <h3 className="font-display text-3xl md:text-4xl font-bold leading-tight drop-shadow-sm">
+                സംരംഭക.<br />കോം
+              </h3>
+              <p className="mt-3 text-white/90 text-sm">
+                Login or register with your agent mobile number.
+              </p>
+            </div>
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 bg-white text-pink-700 px-5 py-3 rounded-xl font-semibold shadow-lg group-hover:gap-3 transition-all">
+                <LogIn className="h-4 w-4" />
+                Login / Register
+                <ArrowUpRight className="h-4 w-4" />
+              </div>
+            </div>
+          </Link>
         </div>
 
         {afterHero}
