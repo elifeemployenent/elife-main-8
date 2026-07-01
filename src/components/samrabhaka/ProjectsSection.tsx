@@ -237,37 +237,60 @@ export function ProjectsSection({ token }: { token: string }) {
             </div>
             <div className="space-y-2">
               <Label>Model</Label>
-              <Select value={form.model} onValueChange={(v) => setForm((f) => ({ ...f, model: v as typeof form.model }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="individual">Individual</SelectItem>
-                  <SelectItem value="partnership">Partnership</SelectItem>
-                  <SelectItem value="group">Group</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { v: "individual", label: "Individual", icon: User },
+                  { v: "partnership", label: "Partnership", icon: Handshake },
+                  { v: "group", label: "Group", icon: Users2 },
+                ].map((o) => (
+                  <ChoiceCard
+                    key={o.v}
+                    active={form.model === o.v}
+                    onClick={() => setForm((f) => ({ ...f, model: o.v as typeof form.model }))}
+                    icon={<o.icon className="h-5 w-5" />}
+                    label={o.label}
+                  />
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Entity</Label>
-              <Select value={form.entity} onValueChange={(v) => setForm((f) => ({ ...f, entity: v as typeof form.entity }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="own_company">Own Company</SelectItem>
-                  <SelectItem value="elife_affiliated">Affiliated with e-Life</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: "own_company", label: "Own Company", icon: Building2 },
+                  { v: "elife_affiliated", label: "Affiliated with e-Life", icon: Users },
+                ].map((o) => (
+                  <ChoiceCard
+                    key={o.v}
+                    active={form.entity === o.v}
+                    onClick={() => setForm((f) => ({ ...f, entity: o.v as typeof form.entity }))}
+                    icon={<o.icon className="h-5 w-5" />}
+                    label={o.label}
+                  />
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Budget Plan</Label>
-              <Select value={form.budget_plan} onValueChange={(v) => setForm((f) => ({ ...f, budget_plan: v as typeof form.budget_plan }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="own_100">a. Own 100% : e-Life 0%</SelectItem>
-                  <SelectItem value="80_20">b. Own 80% : e-Life 20%</SelectItem>
-                  <SelectItem value="50_50">c. Own 50% : e-Life 50%</SelectItem>
-                  <SelectItem value="20_80">d. Own 20% : e-Life 80%</SelectItem>
-                  <SelectItem value="samrambhini">e. സംരംഭിനി (Special — 0 investment)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { v: "own_100", label: "Own 100% : e-Life 0%", sub: "Full self-funded" },
+                  { v: "80_20", label: "Own 80% : e-Life 20%", sub: "Majority self" },
+                  { v: "50_50", label: "Own 50% : e-Life 50%", sub: "Equal partnership" },
+                  { v: "20_80", label: "Own 20% : e-Life 80%", sub: "e-Life majority" },
+                  { v: "samrambhini", label: "സംരംഭിനി", sub: "Special — 0 investment", special: true },
+                ].map((o) => (
+                  <ChoiceCard
+                    key={o.v}
+                    active={form.budget_plan === o.v}
+                    onClick={() => setForm((f) => ({ ...f, budget_plan: o.v as typeof form.budget_plan }))}
+                    icon={o.special ? <Sparkles className="h-5 w-5" /> : <PieChart className="h-5 w-5" />}
+                    label={o.label}
+                    sub={o.sub}
+                    special={o.special}
+                  />
+                ))}
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
