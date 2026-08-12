@@ -27,6 +27,7 @@ const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export default function Trainings() {
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [lessons, setLessons] = useState<LessonMeta[]>([]);
