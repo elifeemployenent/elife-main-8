@@ -33,7 +33,8 @@ import {
   FileSpreadsheet,
   BarChart3,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  GraduationCap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
