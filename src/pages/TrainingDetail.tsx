@@ -58,7 +58,7 @@ export default function TrainingDetail() {
       .eq("training_id", id)
       .eq("learner_key", getLearnerKey())
       .then(({ data }) => setCompleted(new Set((data || []).map((r) => r.lesson_id))));
-  }, [id]);
+  }, [id, adminToken]);
 
   const active = useMemo(() => lessons.find((l) => l.id === activeId) || null, [lessons, activeId]);
   const pct = lessons.length ? Math.round((completed.size / lessons.length) * 100) : 0;
