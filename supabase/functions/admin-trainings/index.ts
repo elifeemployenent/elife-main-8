@@ -129,14 +129,16 @@ serve(async (req) => {
 
     // ---------- Public actions ----------
     if (action === "public_list" || action === "public_detail") {
-      const unlocked = await isValidLearner(body.learner_token);
+      const adminCtx = await verifyAdmin(req.headers.get("x-admin-token"), req.headers.get("authorization"));
+      const unlocked = !!adminCtx || (await isValidLearner(body.learner_token));
       let query = supabase
         .from("trainings")
         .select("*")
-        .eq("is_published", true)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
+      if (!adminCtx) query = query.eq("is_published", true);
       if (!unlocked) query = query.eq("is_public", true);
+
 
       if (action === "public_list") {
         const { data: trainings, error } = await query;
