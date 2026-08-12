@@ -87,10 +87,21 @@ export default function Trainings() {
     <Layout>
       <section className="border-b bg-gradient-to-br from-primary/10 via-background to-accent/10">
         <div className="container py-10 md:py-14">
-          <div className="flex items-center gap-2 text-sm font-medium text-primary">
-            <Sparkles className="h-4 w-4" /> Learning Hub
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Sparkles className="h-4 w-4" /> Learning Hub
+              </div>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Trainings</h1>
+            </div>
+            {isAdmin && (
+              <Button asChild size="sm" className="gap-2 shrink-0">
+                <Link to="/admin/trainings">
+                  <Plus className="h-4 w-4" /> Add training
+                </Link>
+              </Button>
+            )}
           </div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">Trainings</h1>
           <p className="mt-2 max-w-2xl text-muted-foreground">
             Slide decks, image presentations, videos and notes — everything you need to learn, in one place.
             <span className="ml-1 text-foreground/70">പരിശീലന പരിപാടികൾ</span>
