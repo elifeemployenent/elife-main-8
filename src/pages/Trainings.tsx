@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { GraduationCap, Search, PlayCircle, Images, FileText, Video, Lock, Sparkles } from "lucide-react";
+import { GraduationCap, Search, PlayCircle, Images, FileText, Video, Lock, Sparkles, Plus } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { callTrainings, getLearnerToken, getLearnerKey, type Training } from "@/lib/trainingsApi";
 import { supabase } from "@/integrations/supabase/client";
