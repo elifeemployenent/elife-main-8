@@ -219,6 +219,12 @@ export default function SuperAdminDashboard() {
               <span className="text-[10px] sm:text-sm">Samrambhaka</span>
             </Link>
           </Button>
+          <Button asChild variant="outline" className="h-auto py-3 sm:py-4">
+            <Link to="/admin/trainings" className="flex flex-col items-center gap-1.5 sm:gap-2">
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="text-[10px] sm:text-sm">Trainings</span>
+            </Link>
+          </Button>
         </div>
 
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 mb-6 sm:mb-8">
