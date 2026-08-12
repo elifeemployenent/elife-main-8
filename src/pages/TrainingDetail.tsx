@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { LessonViewer } from "@/components/trainings/LessonViewer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+
 import {
   callTrainings,
   getLearnerKey,
@@ -21,6 +23,7 @@ import {
 export default function TrainingDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { adminToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [training, setTraining] = useState<Training | null>(null);
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
@@ -36,7 +39,8 @@ export default function TrainingDetail() {
           action: "public_detail",
           training_id: id,
           learner_token: getLearnerToken(),
-        });
+        }, adminToken);
+
         setTraining(res.training);
         setLessons(res.lessons);
         setActiveId(res.lessons[0]?.id || null);
@@ -54,7 +58,7 @@ export default function TrainingDetail() {
       .eq("training_id", id)
       .eq("learner_key", getLearnerKey())
       .then(({ data }) => setCompleted(new Set((data || []).map((r) => r.lesson_id))));
-  }, [id]);
+  }, [id, adminToken]);
 
   const active = useMemo(() => lessons.find((l) => l.id === activeId) || null, [lessons, activeId]);
   const pct = lessons.length ? Math.round((completed.size / lessons.length) * 100) : 0;

@@ -27,7 +27,7 @@ const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export default function Trainings() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, adminToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [lessons, setLessons] = useState<LessonMeta[]>([]);
@@ -43,7 +43,7 @@ export default function Trainings() {
         const res = await callTrainings<{ trainings: Training[]; lessons: LessonMeta[]; unlocked: boolean }>({
           action: "public_list",
           learner_token: getLearnerToken(),
-        });
+        }, adminToken);
         setTrainings(res.trainings);
         setLessons(res.lessons);
         setUnlocked(res.unlocked);
@@ -59,7 +59,8 @@ export default function Trainings() {
       .select("lesson_id")
       .eq("learner_key", getLearnerKey())
       .then(({ data }) => setCompleted(new Set((data || []).map((r) => r.lesson_id))));
-  }, []);
+  }, [adminToken]);
+
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(trainings.map((t) => t.category).filter(Boolean)))],
