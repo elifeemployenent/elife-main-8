@@ -21,6 +21,7 @@ import {
 export default function TrainingDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { adminToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [training, setTraining] = useState<Training | null>(null);
   const [lessons, setLessons] = useState<TrainingLesson[]>([]);
@@ -36,7 +37,8 @@ export default function TrainingDetail() {
           action: "public_detail",
           training_id: id,
           learner_token: getLearnerToken(),
-        });
+        }, adminToken);
+
         setTraining(res.training);
         setLessons(res.lessons);
         setActiveId(res.lessons[0]?.id || null);
