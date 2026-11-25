@@ -97,4 +97,4 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/c
 19-11-26 elife
 25-11-26 evaself 2
         nenet
-        anasmon
+        anasmon 2
