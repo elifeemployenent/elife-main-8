@@ -40,6 +40,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useAuth } from "@/hooks/useAuth";
+import { VirtualOfficeAssignments } from "@/components/admin/VirtualOfficeAssignments";
 
 interface Panchayath {
   id: string;
@@ -508,6 +509,10 @@ export default function LocationsManagement() {
             <TabsTrigger value="clusters" className="flex items-center gap-2">
               <Building className="h-4 w-4" />
               Clusters
+            </TabsTrigger>
+            <TabsTrigger value="virtual-office" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Virtual Office
             </TabsTrigger>
           </TabsList>
 
@@ -1067,6 +1072,10 @@ export default function LocationsManagement() {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          <TabsContent value="virtual-office">
+            <VirtualOfficeAssignments />
           </TabsContent>
         </Tabs>
       </div>

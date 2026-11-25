@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { resetMobileGate } from "@/components/MobileGate";
 import elifeLogo from "@/assets/elife-logo.png";
+import { useHomeViewPreference } from "@/hooks/useHomeViewPreference";
 
 const navLinks = [
   { href: "/", label: "Home", labelMl: "ഹോം" },
@@ -21,6 +22,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const { view, setView } = useHomeViewPreference();
 
   const handleHomeClick = (e: React.MouseEvent, closeMenu = false) => {
     if (closeMenu) setIsMenuOpen(false);
@@ -38,6 +40,13 @@ export function Header() {
       navigate(0 as never);
     }
   };
+
+  const handleHomeViewToggle = () => {
+    setView(view === "virtual-office" ? "classic" : "virtual-office");
+    setIsMenuOpen(false);
+    if (location.pathname !== "/") navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -71,6 +80,11 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+
+          <Button variant="outline" size="sm" className="ml-1" onClick={handleHomeViewToggle}>
+            <Landmark className="mr-2 h-4 w-4" />
+            {view === "virtual-office" ? "Classic Home" : "Virtual Office"}
+          </Button>
           
           {/* Auth buttons */}
           {!isLoading && (
@@ -131,6 +145,11 @@ export function Header() {
                 <span className="ml-2 text-xs opacity-70">{link.labelMl}</span>
               </Link>
             ))}
+
+            <Button variant="outline" className="justify-start" onClick={handleHomeViewToggle}>
+              <Landmark className="mr-2 h-4 w-4" />
+              Switch to {view === "virtual-office" ? "Classic Home" : "Virtual Office"}
+            </Button>
             
             {/* Mobile auth buttons */}
             {!isLoading && (

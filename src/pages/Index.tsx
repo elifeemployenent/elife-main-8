@@ -6,22 +6,32 @@ import { DepartmentPendingSlider } from "@/components/home/DepartmentPendingSlid
 import { PaymentStatusSlider } from "@/components/home/PaymentStatusSlider";
 import { PanchayathFlashBanner } from "@/components/home/PanchayathFlashBanner";
 import { PanchayathDetailsTicker } from "@/components/home/PanchayathDetailsTicker";
+import { VirtualOfficeHome } from "@/components/home/VirtualOfficeHome";
+import { useHomeViewPreference } from "@/hooks/useHomeViewPreference";
 
 const Index = () => {
+  const { view } = useHomeViewPreference();
+
   return (
     <Layout>
-      <PanchayathFlashBanner />
-      <PanchayathDetailsTicker />
-      <BentoHome
-        afterHero={
-          <>
-            <PaymentStatusSlider />
-            <DepartmentWorkLogSection />
-            <CheckStatusSection />
-          </>
-        }
-      />
-      <DepartmentPendingSlider />
+      {view === "virtual-office" ? (
+        <VirtualOfficeHome />
+      ) : (
+        <>
+          <PanchayathFlashBanner />
+          <PanchayathDetailsTicker />
+          <BentoHome
+            afterHero={
+              <>
+                <PaymentStatusSlider />
+                <DepartmentWorkLogSection />
+                <CheckStatusSection />
+              </>
+            }
+          />
+          <DepartmentPendingSlider />
+        </>
+      )}
     </Layout>
   );
 };

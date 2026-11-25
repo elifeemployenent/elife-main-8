@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  canPublishVirtualOfficeAnnouncement,
+  validateVirtualOfficeAnnouncementInput,
+} from "./virtualOfficeAuthorization.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -264,6 +268,49 @@ serve(async (req) => {
       if (!payload) return { error: json({ error: "Invalid or expired token" }, 401) };
       return { agent_id: payload.agent_id as string };
     };
+
+    if (action === "can_post_virtual_office_announcement" || action === "publish_virtual_office_announcement") {
+      const auth = await requireAuth();
+      if ("error" in auth) return auth.error;
+
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(panchayathId)) {
+        return json({ error: "Choose a valid Panchayath." }, 400);
+      }
+
+      const [{ data: agent, error: agentError }, { data: office, error: officeError }] = await Promise.all([
+        supabase.from("pennyekart_agents").select("id, is_active").eq("id", auth.agent_id).maybeSingle(),
+        supabase
+          .from("panchayath_virtual_offices")
+          .select("office_manager_agent_id")
+          .eq("panchayath_id", panchayathId)
+          .maybeSingle(),
+      ]);
+      if (agentError || officeError) return json({ error: "Unable to verify office publishing access." }, 500);
+      if (!agent || !canPublishVirtualOfficeAnnouncement(auth.agent_id, office?.office_manager_agent_id ?? null, agent.is_active === true)) {
+        return json({ error: "Only the assigned active Office Manager can post announcements." }, 403);
+      }
+
+      if (action === "can_post_virtual_office_announcement") {
+        return json({ can_post: true });
+      }
+
+      const validation = validateVirtualOfficeAnnouncementInput(body);
+      if (!validation.valid) return json({ error: validation.error }, 400);
+      const { data: announcement, error: insertError } = await supabase
+        .from("panchayath_virtual_office_announcements")
+        .insert({
+          panchayath_id: validation.value.panchayathId,
+          author_agent_id: auth.agent_id,
+          title: validation.value.title,
+          body: validation.value.body,
+          is_published: true,
+        })
+        .select("id, title, body, created_at")
+        .single();
+      if (insertError) return json({ error: "Announcement could not be published." }, 500);
+      return json({ success: true, announcement });
+    }
 
     const BUDGET_SHARES: Record<string, { own: number; elife: number }> = {
       own_100: { own: 100, elife: 0 },
