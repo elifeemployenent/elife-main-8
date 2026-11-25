@@ -1140,6 +1140,54 @@ export type Database = {
           },
         ]
       }
+      panchayath_virtual_office_announcements: {
+        Row: {
+          author_agent_id: string
+          body: string
+          created_at: string
+          id: string
+          is_published: boolean
+          panchayath_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_agent_id: string
+          body: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          panchayath_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_agent_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          panchayath_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panchayath_virtual_office_announcements_author_agent_id_fkey"
+            columns: ["author_agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "panchayath_virtual_office_announcements_panchayath_id_fkey"
+            columns: ["panchayath_id"]
+            isOneToOne: false
+            referencedRelation: "panchayaths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panchayath_virtual_office_public: {
         Row: {
           code: string | null
@@ -2265,6 +2313,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_virtual_office_agents: {
+        Args: { _panchayath_id: string }
+        Returns: {
+          agent_id: string
+          display_name: string
+          parent_agent_id: string
+          parent_agent_name: string
+          parent_role_key: string
+          role_key: string
+          ward: string
+        }[]
+      }
+      get_public_virtual_office_announcements: {
+        Args: { _panchayath_id: string }
+        Returns: {
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          title: string
+        }[]
+      }
       get_user_division: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
