@@ -71,25 +71,7 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-25/06/2026 4.10 on employnent
-28/06/26 elife society
-28/06/26 employnent
-29/06/26 employnent
-29/06/26 anas mon kk
-29/06/26 elife
-01/07/26 agents
-07/06/26 elife
-01/06/26 anas mon kk
-01/06/26 employnent
-02/06/26 anasmon kk
-02/06/26 employnent
-02/06/26 elife
-03/07/26 emplo
-03/06/26 elife
-07/06/26 elife
-07/08/26 employnent
-1/10/26 elife
-1/10/26 employnent
+
 1/10/26 elife
 6/10/26 elife
 6/10-26 anasmon
@@ -99,3 +81,4 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/c
         nenet
         anasmon 2
 26-11-26 agents
+        sajnaeva
