@@ -1,0 +1,2 @@
+CREATE INDEX idx_vo_magic_words_author ON public.panchayath_virtual_office_magic_words(author_agent_id);
+CREATE INDEX idx_vo_magic_word_views_agent ON public.panchayath_virtual_office_magic_word_views(agent_id);
