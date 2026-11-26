@@ -78,6 +78,12 @@ function isValidUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function isValidDateKey(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -527,30 +533,141 @@ serve(async (req) => {
       if ("error" in admin) return admin.error;
       const wordId = typeof body.magic_word_id === "string" ? body.magic_word_id.trim() : "";
       if (!isValidUuid(wordId)) return json({ error: "Choose a valid Magic Word." }, 400);
-      const { data: views, error } = await supabase
-        .from("panchayath_virtual_office_magic_word_views")
-        .select("seen_at, pennyekart_agents(name, role, ward)")
-        .eq("magic_word_id", wordId)
-        .order("seen_at", { ascending: false })
-        .limit(500);
-      if (error) return json({ error: "The seen list could not be loaded." }, 500);
-      const viewers = (views || []).map((item) => {
-        const agent = Array.isArray(item.pennyekart_agents) ? item.pennyekart_agents[0] : item.pennyekart_agents;
-        return { name: agent?.name ?? "Agent", role: agent?.role ?? "", ward: agent?.ward ?? null, seen_at: item.seen_at };
+
+      const { data: word, error: wordError } = await supabase
+        .from("panchayath_virtual_office_magic_words")
+        .select("id, panchayath_id")
+        .eq("id", wordId)
+        .maybeSingle();
+      if (wordError) return json({ error: "The Magic Word could not be loaded." }, 500);
+      if (!word) return json({ error: "Magic Word not found." }, 404);
+
+      const [{ data: agents, error: agentError }, { data: seenRecords, error: viewError }] = await Promise.all([
+        supabase
+          .from("pennyekart_agents")
+          .select("id, name, role, ward, panchayath_id, panchayaths(name)")
+          .eq("is_active", true)
+          .or(`panchayath_id.eq.${word.panchayath_id},responsible_panchayath_ids.cs.{${word.panchayath_id}}`)
+          .order("name")
+          .limit(1000),
+        supabase
+          .from("panchayath_virtual_office_magic_word_views")
+          .select("agent_id, seen_at")
+          .eq("magic_word_id", wordId)
+          .order("seen_at", { ascending: false })
+          .limit(1000),
+      ]);
+      if (agentError || viewError) return json({ error: "The audience list could not be loaded." }, 500);
+
+      const audience = (agents || []).map((agent: any) => {
+        const home = Array.isArray(agent.panchayaths) ? agent.panchayaths[0] : agent.panchayaths;
+        return {
+          id: agent.id,
+          name: agent.name,
+          role: agent.role,
+          ward: agent.ward,
+          panchayath_name: home?.name ?? null,
+        };
       });
-      return json({ success: true, viewers });
+      return json({ success: true, agents: audience, seen_records: seenRecords || [] });
+    }
+
+    if (action === "virtual_office_magic_word_list") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      const postDate = typeof body.post_date === "string" ? body.post_date.trim() : "";
+      if (panchayathId && panchayathId !== "all" && !isValidUuid(panchayathId)) {
+        return json({ error: "Choose a valid Panchayath filter." }, 400);
+      }
+      if (postDate && !isValidDateKey(postDate)) return json({ error: "Choose a valid post date." }, 400);
+
+      let query = supabase
+        .from("panchayath_virtual_office_magic_words")
+        .select("id, panchayath_id, word_date, content_type, title, body, image_url, created_at, updated_at, author_admin_id, author_user_id, author_agent_id, panchayaths(name, district)")
+        .order("word_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (panchayathId && panchayathId !== "all") query = query.eq("panchayath_id", panchayathId);
+      if (postDate) query = query.eq("word_date", postDate);
+      const { data: words, error: wordsError } = await query;
+      if (wordsError) return json({ error: "Magic Word history could not be loaded." }, 500);
+
+      const rows = words || [];
+      const wordIds = rows.map((word: any) => word.id);
+      const agentAuthorIds = [...new Set(rows.map((word: any) => word.author_agent_id).filter((id: unknown): id is string => typeof id === "string"))];
+      const adminAuthorIds = [...new Set(rows.map((word: any) => word.author_admin_id).filter((id: unknown): id is string => typeof id === "string"))];
+      const userAuthorIds = [...new Set(rows.map((word: any) => word.author_user_id).filter((id: unknown): id is string => typeof id === "string"))];
+      const [agentAuthors, adminAuthors, userAuthors] = await Promise.all([
+        supabase.from("pennyekart_agents").select("id, name").in("id", agentAuthorIds),
+        supabase.from("admins").select("id, full_name").in("id", adminAuthorIds),
+        supabase.from("profiles").select("id, full_name, email").in("id", userAuthorIds),
+      ]);
+      if (agentAuthors.error || adminAuthors.error || userAuthors.error) {
+        return json({ error: "Magic Word author details could not be loaded." }, 500);
+      }
+      const agentNames = new Map((agentAuthors.data || []).map((item: any) => [item.id, item.name]));
+      const adminNames = new Map((adminAuthors.data || []).map((item: any) => [item.id, item.full_name]));
+      const userNames = new Map((userAuthors.data || []).map((item: any) => [item.id, item.full_name || item.email]));
+
+      const seenCounts = new Map<string, number>();
+      for (let offset = 0; wordIds.length && offset < 100000; offset += 1000) {
+        const { data: views, error: viewError } = await supabase
+          .from("panchayath_virtual_office_magic_word_views")
+          .select("magic_word_id")
+          .in("magic_word_id", wordIds)
+          .range(offset, offset + 999);
+        if (viewError) return json({ error: "Magic Word seen counts could not be loaded." }, 500);
+        for (const view of views || []) seenCounts.set(view.magic_word_id, (seenCounts.get(view.magic_word_id) || 0) + 1);
+        if ((views || []).length < 1000) break;
+      }
+
+      return json({
+        success: true,
+        posts: rows.map((word: any) => {
+          const location = Array.isArray(word.panchayaths) ? word.panchayaths[0] : word.panchayaths;
+          const authorName = word.author_agent_id
+            ? agentNames.get(word.author_agent_id)
+            : word.author_admin_id
+              ? adminNames.get(word.author_admin_id)
+              : userNames.get(word.author_user_id);
+          return {
+            id: word.id,
+            panchayath_id: word.panchayath_id,
+            panchayath_name: location?.name ?? "Panchayath",
+            district: location?.district ?? null,
+            word_date: word.word_date,
+            content_type: word.content_type,
+            title: word.title,
+            body: word.body,
+            image_url: word.image_url,
+            created_at: word.created_at,
+            updated_at: word.updated_at,
+            author_name: authorName || "Administrator",
+            seen_count: seenCounts.get(word.id) || 0,
+          };
+        }),
+      });
     }
 
     if (action === "virtual_office_magic_word_publish") {
       const admin = await requireAdmin();
       if ("error" in admin) return admin.error;
       const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      const wordId = typeof body.word_id === "string" ? body.word_id.trim() : "";
       const contentType = typeof body.content_type === "string" ? body.content_type : "";
       const title = typeof body.title === "string" ? body.title.trim() : "";
       const text = typeof body.body === "string" ? body.body.trim() : "";
       const imageUrl = typeof body.image_url === "string" ? body.image_url.trim() : "";
+      const postDate = typeof body.post_date === "string" && body.post_date.trim()
+        ? body.post_date.trim()
+        : getIndiaClock().date;
       const contentTypes = ["word", "offer", "scheme", "post", "poster"];
-      if (!isValidUuid(panchayathId)) return json({ error: "Choose a valid Panchayath." }, 400);
+      if ((!isValidUuid(panchayathId) && panchayathId !== "all") || (wordId && !isValidUuid(wordId))) {
+        return json({ error: "Choose a valid Panchayath." }, 400);
+      }
+      if (wordId && panchayathId === "all") return json({ error: "Choose one Panchayath when editing a post." }, 400);
+      if (!isValidDateKey(postDate)) return json({ error: "Choose a valid post date." }, 400);
       if (!contentTypes.includes(contentType)) return json({ error: "Choose a valid Magic Word type." }, 400);
       if (!title || title.length > 120) return json({ error: "Title must be between 1 and 120 characters." }, 400);
       if (!text || text.length > 3000) return json({ error: "Details must be between 1 and 3,000 characters." }, 400);
@@ -558,32 +675,140 @@ serve(async (req) => {
       if (imageUrl && (imageUrl.length > 2048 || !imageUrl.startsWith(publicStoragePrefix))) {
         return json({ error: "Poster links must come from this project's public media storage." }, 400);
       }
-      const { data: location, error: locationError } = await supabase
-        .from("panchayaths")
-        .select("id, is_active")
-        .eq("id", panchayathId)
-        .maybeSingle();
-      if (locationError) return json({ error: "Unable to verify the selected Panchayath." }, 500);
-      if (!location || location.is_active === false) return json({ error: "Choose an active Panchayath." }, 400);
 
-      const clock = getIndiaClock();
-      const { data: word, error } = await supabase
+      const values = {
+        word_date: postDate,
+        content_type: contentType,
+        title,
+        body: text,
+        image_url: imageUrl || null,
+      };
+      if (wordId) {
+        const { data: word, error } = await supabase
+          .from("panchayath_virtual_office_magic_words")
+          .update({ ...values, panchayath_id: panchayathId })
+          .eq("id", wordId)
+          .select("id, panchayath_id, word_date, content_type, title, body, image_url, updated_at")
+          .maybeSingle();
+        if (error) return json({ error: "The Magic Word could not be updated." }, error.code === "23505" ? 409 : 500);
+        if (!word) return json({ error: "Magic Word not found." }, 404);
+        return json({ success: true, word, count: 1 });
+      }
+
+      const locationsQuery = supabase.from("panchayaths").select("id").eq("is_active", true);
+      const { data: locations, error: locationError } = panchayathId === "all"
+        ? await locationsQuery
+        : await locationsQuery.eq("id", panchayathId).limit(1);
+      if (locationError) return json({ error: "Unable to verify the selected Panchayath." }, 500);
+      if (!locations?.length) return json({ error: "Choose an active Panchayath." }, 400);
+
+      const records = locations.map((location) => ({
+        ...values,
+        panchayath_id: location.id,
+        author_agent_id: null,
+        author_admin_id: admin.admin_id,
+        author_user_id: admin.user_id,
+      }));
+      const { data: saved, error } = await supabase
         .from("panchayath_virtual_office_magic_words")
-        .upsert({
-          panchayath_id: panchayathId,
-          word_date: clock.date,
-          content_type: contentType,
-          title,
-          body: text,
-          image_url: imageUrl || null,
-          author_agent_id: null,
-          author_admin_id: admin.admin_id,
-          author_user_id: admin.user_id,
-        }, { onConflict: "panchayath_id,word_date" })
-        .select("id, panchayath_id, word_date, content_type, title, body, image_url, updated_at")
+        .upsert(records, { onConflict: "panchayath_id,word_date" })
+        .select("id, panchayath_id, word_date, content_type, title, body, image_url, updated_at");
+      if (error) return json({ error: "Magic Word could not be published." }, 500);
+      return json({ success: true, word: saved?.[0] ?? null, posts: saved || [], count: saved?.length || 0 });
+    }
+
+    if (action === "virtual_office_magic_word_delete") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const wordId = typeof body.magic_word_id === "string" ? body.magic_word_id.trim() : "";
+      if (!isValidUuid(wordId)) return json({ error: "Choose a valid Magic Word." }, 400);
+      const { data: deleted, error } = await supabase
+        .from("panchayath_virtual_office_magic_words")
+        .delete()
+        .eq("id", wordId)
+        .select("id")
+        .maybeSingle();
+      if (error) return json({ error: "Magic Word could not be deleted." }, 500);
+      if (!deleted) return json({ error: "Magic Word not found." }, 404);
+      return json({ success: true });
+    }
+
+    if (action === "virtual_office_admin_attendance") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      const workDate = typeof body.work_date === "string" && body.work_date.trim()
+        ? body.work_date.trim()
+        : getIndiaClock().date;
+      if (!isValidUuid(panchayathId)) return json({ error: "Choose a valid Panchayath." }, 400);
+      if (!isValidDateKey(workDate)) return json({ error: "Choose a valid attendance date." }, 400);
+
+      const [{ data: agents, error: agentError }, { data: location, error: locationError }] = await Promise.all([
+        supabase
+          .from("pennyekart_agents")
+          .select("id, name, role, ward, panchayath_id, panchayaths(name)")
+          .eq("is_active", true)
+          .or(`panchayath_id.eq.${panchayathId},responsible_panchayath_ids.cs.{${panchayathId}}`)
+          .order("name")
+          .limit(1000),
+        supabase.from("panchayaths").select("id, name").eq("id", panchayathId).maybeSingle(),
+      ]);
+      if (agentError || locationError) return json({ error: "Attendance could not be loaded." }, 500);
+      if (!location) return json({ error: "Panchayath not found." }, 404);
+
+      const agentIds = (agents || []).map((agent: any) => agent.id);
+      const attendanceResult = agentIds.length
+        ? await supabase
+            .from("panchayath_virtual_office_attendance")
+            .select("agent_id, check_in_at")
+            .eq("work_date", workDate)
+            .in("agent_id", agentIds)
+            .limit(1000)
+        : { data: [], error: null };
+      if (attendanceResult.error) return json({ error: "Attendance records could not be loaded." }, 500);
+      const checkIns = new Map((attendanceResult.data || []).map((item: any) => [item.agent_id, item.check_in_at]));
+      const entries = (agents || []).map((agent: any) => {
+        const home = Array.isArray(agent.panchayaths) ? agent.panchayaths[0] : agent.panchayaths;
+        return {
+          agent_id: agent.id,
+          name: agent.name,
+          role: agent.role,
+          ward: agent.ward,
+          panchayath_name: home?.name ?? location.name,
+          check_in_at: checkIns.get(agent.id) ?? null,
+        };
+      });
+      return json({ success: true, panchayath_id: panchayathId, panchayath_name: location.name, work_date: workDate, entries });
+    }
+
+    if (action === "virtual_office_admin_manual_check_in") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      const agentId = typeof body.agent_id === "string" ? body.agent_id.trim() : "";
+      const workDate = typeof body.work_date === "string" ? body.work_date.trim() : "";
+      if (!isValidUuid(panchayathId) || !isValidUuid(agentId)) return json({ error: "Choose a valid Panchayath and agent." }, 400);
+      if (!isValidDateKey(workDate)) return json({ error: "Choose a valid attendance date." }, 400);
+
+      const { data: agent, error: agentError } = await supabase
+        .from("pennyekart_agents")
+        .select("id, is_active")
+        .eq("id", agentId)
+        .eq("is_active", true)
+        .or(`panchayath_id.eq.${panchayathId},responsible_panchayath_ids.cs.{${panchayathId}}`)
+        .maybeSingle();
+      if (agentError) return json({ error: "Agent eligibility could not be verified." }, 500);
+      if (!agent) return json({ error: "Choose an active agent assigned to this Panchayath." }, 400);
+
+      const { data: attendance, error } = await supabase
+        .from("panchayath_virtual_office_attendance")
+        .upsert({ agent_id: agentId, work_date: workDate, check_in_at: new Date().toISOString() }, {
+          onConflict: "agent_id,work_date",
+        })
+        .select("agent_id, work_date, check_in_at")
         .single();
-      if (error) return json({ error: "Today's Magic Word could not be published." }, 500);
-      return json({ success: true, word });
+      if (error) return json({ error: "Manual check-in could not be recorded." }, 500);
+      return json({ success: true, attendance });
     }
 
     if (action === "can_post_virtual_office_announcement" || action === "publish_virtual_office_announcement") {

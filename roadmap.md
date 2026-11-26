@@ -9,8 +9,8 @@
 
 ## Virtual Office Admin Panel
 
-- [ ] Add the protected `/admin/virtual-office` page and dashboard shortcuts.
-- [ ] Add Magic Word publish, history, edit/delete, and seen/pending receipts.
-- [ ] Add filtered attendance reports and administrator check-in overrides.
-- [ ] Connect office assignment management and agent-facing Magic Word reactions.
-- [ ] Run relevant tests and verify the admin and agent flows in the preview.
+- [ ] Extend `samrabhaka-auth` with authenticated Magic Word bulk publishing, editing, listing, deleting, audience receipts, and attendance actions.
+- [ ] Add protected `/admin/virtual-office` tabs for Magic Word management, attendance, and office assignments.
+- [ ] Add Virtual Office shortcuts to both administrator dashboards.
+- [ ] Show today's Magic Word and seen acknowledgement in the assigned agent's Virtual Office view, with an administrator shortcut.
+- [ ] Run the Virtual Office tests and verify the available preview flows.
