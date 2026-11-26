@@ -1,11 +1,8 @@
-# Security fixes roadmap
-
-- [ ] Replace only the selected broad database policies with scoped access.
-- [ ] Route the affected public, member, and admin screens through scoped server actions.
-- [ ] Verify application flows, confirm the selected scan findings, and record completion.
-
 # Panchayath Virtual Office
 
-- [x] Build the Virtual Office home view with a switch to Classic Home, searchable Panchayath selection, direct office links, and public office information.
-- [x] Add Panchayath-specific announcements for visitors and Office Manager updates.
-- [ ] Expose Virtual Office administrator assignments in Locations Management.
+- [ ] Restore Classic Home as the default while keeping the home-view switch.
+- [ ] Replace the public-facing office page with an authenticated agent workspace and blue theme.
+- [ ] Show agent profile, allocated Panchayaths, and agents reporting directly to the signed-in agent.
+- [ ] Add daily 10:00 AM–12:00 PM IST attendance with server-enforced limits.
+- [ ] Add daily Magic Word posts and logged-in agent seen reactions.
+- [ ] Verify core flows, tests, and preview; update project architecture notes.
