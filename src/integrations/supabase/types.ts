@@ -1188,6 +1188,137 @@ export type Database = {
           },
         ]
       }
+      panchayath_virtual_office_attendance: {
+        Row: {
+          agent_id: string
+          check_in_at: string
+          created_at: string
+          id: string
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          agent_id: string
+          check_in_at?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          agent_id?: string
+          check_in_at?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panchayath_virtual_office_attendance_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      panchayath_virtual_office_magic_word_views: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          magic_word_id: string
+          seen_at: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          magic_word_id: string
+          seen_at?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          magic_word_id?: string
+          seen_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panchayath_virtual_office_magic_word_views_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "panchayath_virtual_office_magic_word_views_magic_word_id_fkey"
+            columns: ["magic_word_id"]
+            isOneToOne: false
+            referencedRelation: "panchayath_virtual_office_magic_words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      panchayath_virtual_office_magic_words: {
+        Row: {
+          author_agent_id: string
+          body: string
+          content_type: string
+          created_at: string
+          id: string
+          image_url: string | null
+          panchayath_id: string
+          title: string
+          updated_at: string
+          word_date: string
+        }
+        Insert: {
+          author_agent_id: string
+          body: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          panchayath_id: string
+          title: string
+          updated_at?: string
+          word_date: string
+        }
+        Update: {
+          author_agent_id?: string
+          body?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          panchayath_id?: string
+          title?: string
+          updated_at?: string
+          word_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "panchayath_virtual_office_magic_words_author_agent_id_fkey"
+            columns: ["author_agent_id"]
+            isOneToOne: false
+            referencedRelation: "pennyekart_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "panchayath_virtual_office_magic_words_panchayath_id_fkey"
+            columns: ["panchayath_id"]
+            isOneToOne: false
+            referencedRelation: "panchayaths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panchayath_virtual_office_public: {
         Row: {
           code: string | null
