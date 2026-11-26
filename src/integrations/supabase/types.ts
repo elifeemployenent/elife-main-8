@@ -1267,7 +1267,9 @@ export type Database = {
       }
       panchayath_virtual_office_magic_words: {
         Row: {
-          author_agent_id: string
+          author_admin_id: string | null
+          author_agent_id: string | null
+          author_user_id: string | null
           body: string
           content_type: string
           created_at: string
@@ -1279,7 +1281,9 @@ export type Database = {
           word_date: string
         }
         Insert: {
-          author_agent_id: string
+          author_admin_id?: string | null
+          author_agent_id?: string | null
+          author_user_id?: string | null
           body: string
           content_type?: string
           created_at?: string
@@ -1291,7 +1295,9 @@ export type Database = {
           word_date: string
         }
         Update: {
-          author_agent_id?: string
+          author_admin_id?: string | null
+          author_agent_id?: string | null
+          author_user_id?: string | null
           body?: string
           content_type?: string
           created_at?: string
@@ -1303,6 +1309,13 @@ export type Database = {
           word_date?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "panchayath_virtual_office_magic_words_author_admin_id_fkey"
+            columns: ["author_admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "panchayath_virtual_office_magic_words_author_agent_id_fkey"
             columns: ["author_agent_id"]

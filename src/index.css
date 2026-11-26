@@ -59,6 +59,12 @@ All colors MUST be HSL.
     --aval: 340 60% 50%;
     --pennyekart: 35 80% 48%;
 
+    --virtual-office-start: 222 86% 53%;
+    --virtual-office-mid: 208 92% 44%;
+    --virtual-office-end: 198 84% 34%;
+    --virtual-office-foreground: 210 40% 98%;
+    --virtual-office-soft: 210 70% 97%;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 140 35% 18%;
     --sidebar-primary: 145 45% 28%;
@@ -106,6 +112,12 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 45 25% 90%;
     --sidebar-border: 140 20% 20%;
     --sidebar-ring: 145 50% 42%;
+
+    --virtual-office-start: 221 78% 42%;
+    --virtual-office-mid: 208 78% 36%;
+    --virtual-office-end: 198 72% 28%;
+    --virtual-office-foreground: 210 40% 98%;
+    --virtual-office-soft: 210 30% 16%;
   }
 }
 

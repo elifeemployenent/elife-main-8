@@ -11,14 +11,14 @@ export interface PanchayathLinkOption {
 }
 
 export function parseHomeViewPreference(value: string | null): HomeView {
-  return value === "classic" ? "classic" : "virtual-office";
+  return value === "virtual-office" ? "virtual-office" : "classic";
 }
 
 export function readHomeViewPreference(): HomeView {
   try {
     return parseHomeViewPreference(window.localStorage.getItem(HOME_VIEW_STORAGE_KEY));
   } catch {
-    return "virtual-office";
+    return "classic";
   }
 }
 

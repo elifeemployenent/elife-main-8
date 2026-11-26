@@ -74,6 +74,13 @@ export default {
           aval: "hsl(var(--aval))",
           pennyekart: "hsl(var(--pennyekart))",
         },
+        "virtual-office": {
+          start: "hsl(var(--virtual-office-start))",
+          mid: "hsl(var(--virtual-office-mid))",
+          end: "hsl(var(--virtual-office-end))",
+          foreground: "hsl(var(--virtual-office-foreground))",
+          soft: "hsl(var(--virtual-office-soft))",
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

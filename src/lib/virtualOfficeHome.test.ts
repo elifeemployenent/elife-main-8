@@ -7,10 +7,11 @@ const panchayaths = [
 ];
 
 describe("Virtual Office home preferences", () => {
-  it("defaults to Virtual Office unless Classic Home was explicitly saved", () => {
-    expect(parseHomeViewPreference(null)).toBe("virtual-office");
-    expect(parseHomeViewPreference("unknown")).toBe("virtual-office");
+  it("defaults to Classic Home unless Virtual Office was explicitly saved", () => {
+    expect(parseHomeViewPreference(null)).toBe("classic");
+    expect(parseHomeViewPreference("unknown")).toBe("classic");
     expect(parseHomeViewPreference("classic")).toBe("classic");
+    expect(parseHomeViewPreference("virtual-office")).toBe("virtual-office");
   });
 
   it("resolves a direct Panchayath link by id, code, or name slug", () => {

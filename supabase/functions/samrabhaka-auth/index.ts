@@ -7,7 +7,7 @@ import {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-samrabhaka-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-samrabhaka-token, x-admin-token",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -50,6 +50,32 @@ async function verifyToken(token: string, secret: string): Promise<Record<string
   } catch {
     return null;
   }
+}
+
+function getIndiaClock(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value || "00";
+  const hour = Number(value("hour"));
+  const minute = Number(value("minute"));
+  const second = Number(value("second"));
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    minuteOfDay: hour * 60 + minute,
+    second,
+  };
+}
+
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 serve(async (req) => {
@@ -268,6 +294,297 @@ serve(async (req) => {
       if (!payload) return { error: json({ error: "Invalid or expired token" }, 401) };
       return { agent_id: payload.agent_id as string };
     };
+
+    const requireAdmin = async () => {
+      const adminToken = req.headers.get("x-admin-token");
+      if (adminToken) {
+        const payload = await verifyToken(adminToken, secret);
+        if (typeof payload?.admin_id === "string") {
+          const { data: admin, error } = await supabase
+            .from("admins")
+            .select("id, user_id, is_active, is_read_only")
+            .eq("id", payload.admin_id)
+            .maybeSingle();
+          if (error) return { error: json({ error: "Unable to verify administrator access." }, 500) };
+          if (admin?.is_active && !admin.is_read_only) {
+            return { admin_id: admin.id as string, user_id: admin.user_id as string | null };
+          }
+          return { error: json({ error: "An active administrator account is required." }, 403) };
+        }
+      }
+
+      const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      if (bearer && anonKey && supabaseUrl) {
+        const authClient = createClient(supabaseUrl, anonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: { headers: { Authorization: `Bearer ${bearer}` } },
+        });
+        const { data: authData } = await authClient.auth.getUser(bearer);
+        if (authData.user) {
+          const { data: roles, error } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", authData.user.id);
+          if (error) return { error: json({ error: "Unable to verify administrator access." }, 500) };
+          if (roles?.some((item) => item.role === "admin" || item.role === "super_admin")) {
+            return { admin_id: null, user_id: authData.user.id as string | null };
+          }
+          return { error: json({ error: "Administrator access is required." }, 403) };
+        }
+      }
+      return { error: json({ error: "Administrator access is required." }, 403) };
+    };
+
+    if (action === "virtual_office_dashboard") {
+      const auth = await requireAuth();
+      if ("error" in auth) return auth.error;
+      const { data: agent, error: agentError } = await supabase
+        .from("pennyekart_agents")
+        .select("id, name, mobile, role, ward, panchayath_id, responsible_panchayath_ids, is_active")
+        .eq("id", auth.agent_id)
+        .maybeSingle();
+      if (agentError) return json({ error: "Unable to load your profile." }, 500);
+      if (!agent || agent.is_active !== true) return json({ error: "Your agent account is inactive." }, 403);
+
+      const panchayathIds = [...new Set([
+        agent.panchayath_id,
+        ...(Array.isArray(agent.responsible_panchayath_ids) ? agent.responsible_panchayath_ids : []),
+      ].filter((id): id is string => typeof id === "string" && isValidUuid(id)))];
+
+      const [panchayathResult, reportResult] = await Promise.all([
+        panchayathIds.length
+          ? supabase.from("panchayaths").select("id, name, district, code, is_active").in("id", panchayathIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase
+          .from("pennyekart_agents")
+          .select("id, name, role, ward, panchayath_id, panchayaths(name, district)")
+          .eq("parent_agent_id", auth.agent_id)
+          .or("is_active.eq.true,is_active.is.null")
+          .order("name")
+          .limit(500),
+      ]);
+      if (panchayathResult.error || reportResult.error) return json({ error: "Unable to load your Panchayath team." }, 500);
+
+      const allocatedPanchayaths = (panchayathResult.data || [])
+        .filter((item) => item.is_active !== false)
+        .map(({ id, name, district, code }) => ({ id, name, district, code }));
+      const directReports = (reportResult.data || []).map((item) => {
+        const location = Array.isArray(item.panchayaths) ? item.panchayaths[0] : item.panchayaths;
+        return {
+          id: item.id,
+          name: item.name,
+          role: item.role,
+          ward: item.ward,
+          panchayath_id: item.panchayath_id,
+          panchayath_name: location?.name ?? null,
+          district: location?.district ?? null,
+        };
+      });
+      return json({
+        success: true,
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          mobile: agent.mobile,
+          role: agent.role,
+          ward: agent.ward,
+          panchayath_id: agent.panchayath_id,
+        },
+        allocatedPanchayaths,
+        directReports,
+      });
+    }
+
+    if (action === "virtual_office_attendance_status" || action === "virtual_office_mark_attendance") {
+      const auth = await requireAuth();
+      if ("error" in auth) return auth.error;
+      const { data: agent, error: agentError } = await supabase
+        .from("pennyekart_agents")
+        .select("id, is_active")
+        .eq("id", auth.agent_id)
+        .maybeSingle();
+      if (agentError) return json({ error: "Unable to verify your agent account." }, 500);
+      if (!agent || agent.is_active !== true) return json({ error: "Your agent account is inactive." }, 403);
+
+      const clock = getIndiaClock();
+      const canMark = clock.minuteOfDay >= 600 && clock.minuteOfDay < 720;
+      if (action === "virtual_office_attendance_status") {
+        const { data: attendance, error } = await supabase
+          .from("panchayath_virtual_office_attendance")
+          .select("id, work_date, check_in_at")
+          .eq("agent_id", auth.agent_id)
+          .eq("work_date", clock.date)
+          .maybeSingle();
+        if (error) return json({ error: "Unable to load today's attendance." }, 500);
+        return json({ success: true, attendance, workDate: clock.date, canMark });
+      }
+
+      if (!canMark) return json({ error: "Attendance is available daily from 10:00 AM to 12:00 PM IST." }, 403);
+      const { data: attendance, error } = await supabase
+        .from("panchayath_virtual_office_attendance")
+        .insert({ agent_id: auth.agent_id, work_date: clock.date, check_in_at: new Date().toISOString() })
+        .select("id, work_date, check_in_at")
+        .single();
+      if (error?.code === "23505") {
+        const { data: existing } = await supabase
+          .from("panchayath_virtual_office_attendance")
+          .select("id, work_date, check_in_at")
+          .eq("agent_id", auth.agent_id)
+          .eq("work_date", clock.date)
+          .maybeSingle();
+        return json({ success: true, alreadyMarked: true, attendance: existing });
+      }
+      if (error) return json({ error: "Attendance could not be saved." }, 500);
+      return json({ success: true, alreadyMarked: false, attendance });
+    }
+
+    if (action === "virtual_office_magic_word_today") {
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      if (!isValidUuid(panchayathId)) return json({ error: "Choose a valid Panchayath." }, 400);
+
+      let agentId: string | null = null;
+      const agentToken = req.headers.get("x-samrabhaka-token") || body.token;
+      if (agentToken) {
+        const auth = await requireAuth();
+        if ("error" in auth) return auth.error;
+        agentId = auth.agent_id;
+      }
+      const admin = await requireAdmin();
+      const isAdmin = !("error" in admin);
+      if (!agentId && !isAdmin) return admin.error;
+
+      if (agentId && !isAdmin) {
+        const { data: agent, error } = await supabase
+          .from("pennyekart_agents")
+          .select("id, is_active, panchayath_id, responsible_panchayath_ids")
+          .eq("id", agentId)
+          .maybeSingle();
+        if (error) return json({ error: "Unable to verify your Panchayath access." }, 500);
+        if (!agent || agent.is_active !== true) return json({ error: "Your agent account is inactive." }, 403);
+        const assigned = agent.panchayath_id === panchayathId ||
+          (Array.isArray(agent.responsible_panchayath_ids) && agent.responsible_panchayath_ids.includes(panchayathId));
+        if (!assigned) return json({ error: "This Panchayath is not assigned to your account." }, 403);
+      }
+
+      const clock = getIndiaClock();
+      const { data: word, error: wordError } = await supabase
+        .from("panchayath_virtual_office_magic_words")
+        .select("id, panchayath_id, word_date, content_type, title, body, image_url, created_at")
+        .eq("panchayath_id", panchayathId)
+        .eq("word_date", clock.date)
+        .maybeSingle();
+      if (wordError) return json({ error: "Today's Magic Word could not be loaded." }, 500);
+
+      if (!word) return json({ success: true, word: null, seen: false, seen_at: null, seen_count: 0 });
+      const [{ data: seenRow, error: seenError }, { count, error: countError }] = await Promise.all([
+        agentId
+          ? supabase.from("panchayath_virtual_office_magic_word_views").select("seen_at").eq("magic_word_id", word.id).eq("agent_id", agentId).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        supabase.from("panchayath_virtual_office_magic_word_views").select("id", { count: "exact", head: true }).eq("magic_word_id", word.id),
+      ]);
+      if (seenError || countError) return json({ error: "Magic Word reactions could not be loaded." }, 500);
+      return json({ success: true, word, seen: !!seenRow, seen_at: seenRow?.seen_at ?? null, seen_count: count || 0 });
+    }
+
+    if (action === "virtual_office_magic_word_seen") {
+      const auth = await requireAuth();
+      if ("error" in auth) return auth.error;
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      if (!isValidUuid(panchayathId)) return json({ error: "Choose a valid Panchayath." }, 400);
+      const { data: agent, error: agentError } = await supabase
+        .from("pennyekart_agents")
+        .select("id, is_active, panchayath_id, responsible_panchayath_ids")
+        .eq("id", auth.agent_id)
+        .maybeSingle();
+      if (agentError) return json({ error: "Unable to verify your Panchayath access." }, 500);
+      if (!agent || agent.is_active !== true) return json({ error: "Your agent account is inactive." }, 403);
+      const assigned = agent.panchayath_id === panchayathId ||
+        (Array.isArray(agent.responsible_panchayath_ids) && agent.responsible_panchayath_ids.includes(panchayathId));
+      if (!assigned) return json({ error: "This Panchayath is not assigned to your account." }, 403);
+
+      const clock = getIndiaClock();
+      const { data: word, error: wordError } = await supabase
+        .from("panchayath_virtual_office_magic_words")
+        .select("id")
+        .eq("panchayath_id", panchayathId)
+        .eq("word_date", clock.date)
+        .maybeSingle();
+      if (wordError) return json({ error: "Today's Magic Word could not be loaded." }, 500);
+      if (!word) return json({ error: "There is no Magic Word to react to today." }, 404);
+      const { data: reaction, error: reactionError } = await supabase
+        .from("panchayath_virtual_office_magic_word_views")
+        .upsert({ magic_word_id: word.id, agent_id: auth.agent_id }, { onConflict: "magic_word_id,agent_id", ignoreDuplicates: true })
+        .select("seen_at")
+        .maybeSingle();
+      if (reactionError) return json({ error: "Your reaction could not be saved." }, 500);
+      return json({ success: true, alreadySeen: !reaction, seen_at: reaction?.seen_at ?? new Date().toISOString() });
+    }
+
+    if (action === "virtual_office_magic_word_seen_by") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const wordId = typeof body.magic_word_id === "string" ? body.magic_word_id.trim() : "";
+      if (!isValidUuid(wordId)) return json({ error: "Choose a valid Magic Word." }, 400);
+      const { data: views, error } = await supabase
+        .from("panchayath_virtual_office_magic_word_views")
+        .select("seen_at, pennyekart_agents(name, role, ward)")
+        .eq("magic_word_id", wordId)
+        .order("seen_at", { ascending: false })
+        .limit(500);
+      if (error) return json({ error: "The seen list could not be loaded." }, 500);
+      const viewers = (views || []).map((item) => {
+        const agent = Array.isArray(item.pennyekart_agents) ? item.pennyekart_agents[0] : item.pennyekart_agents;
+        return { name: agent?.name ?? "Agent", role: agent?.role ?? "", ward: agent?.ward ?? null, seen_at: item.seen_at };
+      });
+      return json({ success: true, viewers });
+    }
+
+    if (action === "virtual_office_magic_word_publish") {
+      const admin = await requireAdmin();
+      if ("error" in admin) return admin.error;
+      const panchayathId = typeof body.panchayath_id === "string" ? body.panchayath_id.trim() : "";
+      const contentType = typeof body.content_type === "string" ? body.content_type : "";
+      const title = typeof body.title === "string" ? body.title.trim() : "";
+      const text = typeof body.body === "string" ? body.body.trim() : "";
+      const imageUrl = typeof body.image_url === "string" ? body.image_url.trim() : "";
+      const contentTypes = ["word", "offer", "scheme", "post", "poster"];
+      if (!isValidUuid(panchayathId)) return json({ error: "Choose a valid Panchayath." }, 400);
+      if (!contentTypes.includes(contentType)) return json({ error: "Choose a valid Magic Word type." }, 400);
+      if (!title || title.length > 120) return json({ error: "Title must be between 1 and 120 characters." }, 400);
+      if (!text || text.length > 3000) return json({ error: "Details must be between 1 and 3,000 characters." }, 400);
+      const publicStoragePrefix = `${Deno.env.get("SUPABASE_URL") || ""}/storage/v1/object/public/`;
+      if (imageUrl && (imageUrl.length > 2048 || !imageUrl.startsWith(publicStoragePrefix))) {
+        return json({ error: "Poster links must come from this project's public media storage." }, 400);
+      }
+      const { data: location, error: locationError } = await supabase
+        .from("panchayaths")
+        .select("id, is_active")
+        .eq("id", panchayathId)
+        .maybeSingle();
+      if (locationError) return json({ error: "Unable to verify the selected Panchayath." }, 500);
+      if (!location || location.is_active === false) return json({ error: "Choose an active Panchayath." }, 400);
+
+      const clock = getIndiaClock();
+      const { data: word, error } = await supabase
+        .from("panchayath_virtual_office_magic_words")
+        .upsert({
+          panchayath_id: panchayathId,
+          word_date: clock.date,
+          content_type: contentType,
+          title,
+          body: text,
+          image_url: imageUrl || null,
+          author_agent_id: null,
+          author_admin_id: admin.admin_id,
+          author_user_id: admin.user_id,
+        }, { onConflict: "panchayath_id,word_date" })
+        .select("id, panchayath_id, word_date, content_type, title, body, image_url, updated_at")
+        .single();
+      if (error) return json({ error: "Today's Magic Word could not be published." }, 500);
+      return json({ success: true, word });
+    }
 
     if (action === "can_post_virtual_office_announcement" || action === "publish_virtual_office_announcement") {
       const auth = await requireAuth();
